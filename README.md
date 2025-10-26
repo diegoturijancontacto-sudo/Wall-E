@@ -6,12 +6,19 @@ Un sitio web interactivo con un robot estilo Wall-E en 3D creado con Babylon.js.
 
 🤖 **Robot Wall-E en 3D** - Modelo de robot completamente funcional creado con geometrías básicas (sin problemas de derechos de autor)
 
+🦿 **Piernas Strandbeest** - El robot se mueve con piernas inspiradas en los mecanismos de Theo Jansen
+
 🎮 **Controles Interactivos:**
 - **W/A/S/D** - Mover el robot por el escenario 3D
 - **Q/E** - Rotar el robot
 - **ESPACIO** - Abrir y cerrar la compuerta frontal del robot
 - **C** - Transformar el robot en un cubo compacto (¡y viceversa!)
 - **Click + Arrastrar** - Rotar la cámara alrededor del robot
+
+📱 **Controles Táctiles** - Botones en pantalla para dispositivos móviles:
+- Joystick virtual para movimiento
+- Botones de rotación
+- Botones de acción (compuerta y transformación)
 
 🌍 **Escenario 3D** - Superficie con patrón de cuadrícula para facilitar la navegación
 

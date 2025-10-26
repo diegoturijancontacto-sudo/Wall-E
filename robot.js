@@ -109,25 +109,59 @@ const createRobot = (scene) => {
     const leftEye = createEye(-0.3);
     const rightEye = createEye(0.3);
 
-    // Tracks (wheels)
-    const createTrack = (x) => {
-        const track = BABYLON.MeshBuilder.CreateBox(
-            "track",
-            { width: 1.8, height: 0.5, depth: 0.4 },
+    // Strandbeest-style legs
+    const createLeg = (x, z) => {
+        const leg = new BABYLON.TransformNode("leg", scene);
+        leg.parent = body;
+        
+        // Thigh (upper leg segment)
+        const thigh = BABYLON.MeshBuilder.CreateCylinder(
+            "thigh",
+            { height: 0.8, diameter: 0.15 },
             scene
         );
-        track.position = new BABYLON.Vector3(0, -0.6, x);
-        track.parent = body;
-
-        const trackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
-        trackMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
-        track.material = trackMaterial;
-
-        return track;
+        thigh.rotation.x = Math.PI / 2;
+        thigh.position = new BABYLON.Vector3(x, -0.5, z);
+        thigh.parent = leg;
+        
+        // Shin (lower leg segment)
+        const shin = BABYLON.MeshBuilder.CreateCylinder(
+            "shin",
+            { height: 0.6, diameter: 0.12 },
+            scene
+        );
+        shin.rotation.x = Math.PI / 2;
+        shin.position = new BABYLON.Vector3(x, -0.9, z + 0.4);
+        shin.parent = leg;
+        
+        // Foot
+        const foot = BABYLON.MeshBuilder.CreateSphere(
+            "foot",
+            { diameter: 0.2 },
+            scene
+        );
+        foot.position = new BABYLON.Vector3(x, -1.3, z + 0.7);
+        foot.parent = leg;
+        
+        const legMaterial = new BABYLON.StandardMaterial("legMat", scene);
+        legMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        thigh.material = legMaterial;
+        shin.material = legMaterial;
+        foot.material = legMaterial;
+        
+        leg.thigh = thigh;
+        leg.shin = shin;
+        leg.foot = foot;
+        
+        return leg;
     };
 
-    const leftTrack = createTrack(-0.6);
-    const rightTrack = createTrack(0.6);
+    // Create 4 legs (Strandbeest style - 2 on each side)
+    const legs = [];
+    legs.push(createLeg(-0.8, -0.5));  // Left front
+    legs.push(createLeg(-0.8, 0.5));   // Left back
+    legs.push(createLeg(0.8, -0.5));   // Right front
+    legs.push(createLeg(0.8, 0.5));    // Right back
 
     // Hatch (compuerta) - front panel that opens
     const hatch = BABYLON.MeshBuilder.CreateBox(
@@ -170,8 +204,7 @@ const createRobot = (scene) => {
     robot.body = body;
     robot.head = head;
     robot.hatch = hatch;
-    robot.leftTrack = leftTrack;
-    robot.rightTrack = rightTrack;
+    robot.legs = legs;
     robot.leftEye = leftEye;
     robot.rightEye = rightEye;
 
@@ -188,9 +221,19 @@ class RobotController {
         this.hatchOpen = false;
         this.isCube = false;
         this.cubeTransition = 0;
+        this.walkCycle = 0; // For leg animation
         
         this.keys = {};
+        this.touchControls = {
+            moveForward: false,
+            moveBackward: false,
+            moveLeft: false,
+            moveRight: false,
+            rotateLeft: false,
+            rotateRight: false
+        };
         this.setupControls();
+        this.setupTouchControls();
     }
 
     setupControls() {
@@ -208,6 +251,131 @@ class RobotController {
 
         window.addEventListener("keyup", (e) => {
             this.keys[e.key.toLowerCase()] = false;
+        });
+    }
+
+    setupTouchControls() {
+        // Create touch control overlay
+        const touchContainer = document.createElement('div');
+        touchContainer.id = 'touchControls';
+        touchContainer.style.cssText = `
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            display: none;
+            pointer-events: none;
+        `;
+        
+        // Movement controls (left side)
+        const movementControls = document.createElement('div');
+        movementControls.style.cssText = `
+            position: absolute;
+            left: 20px;
+            bottom: 0;
+            pointer-events: auto;
+        `;
+        
+        const createTouchButton = (label, top, left) => {
+            const btn = document.createElement('button');
+            btn.textContent = label;
+            btn.style.cssText = `
+                position: absolute;
+                top: ${top}px;
+                left: ${left}px;
+                width: 60px;
+                height: 60px;
+                background: rgba(76, 175, 80, 0.5);
+                border: 2px solid rgba(76, 175, 80, 0.8);
+                border-radius: 50%;
+                color: white;
+                font-size: 18px;
+                font-weight: bold;
+                touch-action: none;
+                user-select: none;
+            `;
+            return btn;
+        };
+        
+        const upBtn = createTouchButton('↑', 0, 60);
+        const downBtn = createTouchButton('↓', 120, 60);
+        const leftBtn = createTouchButton('←', 60, 0);
+        const rightBtn = createTouchButton('→', 60, 120);
+        
+        movementControls.appendChild(upBtn);
+        movementControls.appendChild(downBtn);
+        movementControls.appendChild(leftBtn);
+        movementControls.appendChild(rightBtn);
+        
+        // Rotation controls (right side)
+        const rotationControls = document.createElement('div');
+        rotationControls.style.cssText = `
+            position: absolute;
+            right: 20px;
+            bottom: 60px;
+            pointer-events: auto;
+        `;
+        
+        const rotLeftBtn = createTouchButton('⟲', 0, 0);
+        const rotRightBtn = createTouchButton('⟳', 0, 80);
+        
+        rotationControls.appendChild(rotLeftBtn);
+        rotationControls.appendChild(rotRightBtn);
+        
+        // Action buttons (right side, top)
+        const actionControls = document.createElement('div');
+        actionControls.style.cssText = `
+            position: absolute;
+            right: 20px;
+            top: 200px;
+            pointer-events: auto;
+        `;
+        
+        const hatchBtn = createTouchButton('🚪', 0, 0);
+        const cubeBtn = createTouchButton('◻', 70, 0);
+        
+        actionControls.appendChild(hatchBtn);
+        actionControls.appendChild(cubeBtn);
+        
+        touchContainer.appendChild(movementControls);
+        touchContainer.appendChild(rotationControls);
+        touchContainer.appendChild(actionControls);
+        document.body.appendChild(touchContainer);
+        
+        // Show touch controls on mobile
+        if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
+            touchContainer.style.display = 'block';
+        }
+        
+        // Touch event handlers
+        const addTouchHandler = (btn, action) => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                this.touchControls[action] = true;
+                btn.style.background = 'rgba(76, 175, 80, 0.8)';
+            });
+            
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                this.touchControls[action] = false;
+                btn.style.background = 'rgba(76, 175, 80, 0.5)';
+            });
+        };
+        
+        addTouchHandler(upBtn, 'moveForward');
+        addTouchHandler(downBtn, 'moveBackward');
+        addTouchHandler(leftBtn, 'moveLeft');
+        addTouchHandler(rightBtn, 'moveRight');
+        addTouchHandler(rotLeftBtn, 'rotateLeft');
+        addTouchHandler(rotRightBtn, 'rotateRight');
+        
+        hatchBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.toggleHatch();
+        });
+        
+        cubeBtn.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            this.toggleCube();
         });
     }
 
@@ -366,42 +534,49 @@ class RobotController {
             Math.cos(this.robot.rotation.y)
         );
 
-        // Movement
-        if (this.keys["w"]) {
+        let isMoving = false;
+
+        // Movement (keyboard or touch)
+        if (this.keys["w"] || this.touchControls.moveForward) {
             const forward = getForwardVector();
             this.robot.position.addInPlace(forward.scale(this.moveSpeed));
-            this.animateTracks();
+            isMoving = true;
         }
-        if (this.keys["s"]) {
+        if (this.keys["s"] || this.touchControls.moveBackward) {
             const backward = getForwardVector();
             this.robot.position.addInPlace(backward.scale(-this.moveSpeed));
-            this.animateTracks();
+            isMoving = true;
         }
-        if (this.keys["a"]) {
+        if (this.keys["a"] || this.touchControls.moveLeft) {
             const left = new BABYLON.Vector3(
                 Math.sin(this.robot.rotation.y - Math.PI / 2),
                 0,
                 Math.cos(this.robot.rotation.y - Math.PI / 2)
             );
             this.robot.position.addInPlace(left.scale(this.moveSpeed));
-            this.animateTracks();
+            isMoving = true;
         }
-        if (this.keys["d"]) {
+        if (this.keys["d"] || this.touchControls.moveRight) {
             const right = new BABYLON.Vector3(
                 Math.sin(this.robot.rotation.y + Math.PI / 2),
                 0,
                 Math.cos(this.robot.rotation.y + Math.PI / 2)
             );
             this.robot.position.addInPlace(right.scale(this.moveSpeed));
-            this.animateTracks();
+            isMoving = true;
         }
 
-        // Rotation
-        if (this.keys["q"]) {
+        // Rotation (keyboard or touch)
+        if (this.keys["q"] || this.touchControls.rotateLeft) {
             this.robot.rotation.y += this.rotateSpeed;
         }
-        if (this.keys["e"]) {
+        if (this.keys["e"] || this.touchControls.rotateRight) {
             this.robot.rotation.y -= this.rotateSpeed;
+        }
+
+        // Animate legs when moving
+        if (isMoving) {
+            this.animateLegs();
         }
 
         // Keep robot on ground
@@ -410,11 +585,30 @@ class RobotController {
         }
     }
 
-    animateTracks() {
-        // Simple track animation - slight rotation
-        if (this.robot.leftTrack && this.robot.rightTrack) {
-            this.robot.leftTrack.rotation.x += 0.1;
-            this.robot.rightTrack.rotation.x += 0.1;
+    animateLegs() {
+        // Strandbeest-style walking animation
+        this.walkCycle += 0.15;
+        
+        if (this.robot.legs && this.robot.legs.length > 0) {
+            this.robot.legs.forEach((leg, index) => {
+                // Alternate leg movement (front and back on opposite phases)
+                const phase = (index % 2 === 0) ? this.walkCycle : this.walkCycle + Math.PI;
+                
+                // Strandbeest-inspired motion
+                const thighAngle = Math.sin(phase) * 0.5;
+                const shinAngle = Math.sin(phase + Math.PI / 4) * 0.4;
+                const footHeight = Math.abs(Math.sin(phase)) * 0.3;
+                
+                if (leg.thigh) {
+                    leg.thigh.rotation.z = thighAngle;
+                }
+                if (leg.shin) {
+                    leg.shin.rotation.z = shinAngle;
+                }
+                if (leg.foot) {
+                    leg.foot.position.y = -1.3 + footHeight;
+                }
+            });
         }
     }
 }
