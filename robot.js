@@ -140,7 +140,8 @@ const createRobot = (scene) => {
             { diameter: 0.2 },
             scene
         );
-        foot.position = new BABYLON.Vector3(x, -1.3, z + 0.7);
+        const footBaseY = -1.3; // Base Y position for foot
+        foot.position = new BABYLON.Vector3(x, footBaseY, z + 0.7);
         foot.parent = leg;
         
         const legMaterial = new BABYLON.StandardMaterial("legMat", scene);
@@ -152,6 +153,7 @@ const createRobot = (scene) => {
         leg.thigh = thigh;
         leg.shin = shin;
         leg.foot = foot;
+        leg.footBaseY = footBaseY; // Store for animation
         
         return leg;
     };
@@ -354,11 +356,14 @@ class RobotController {
                 btn.style.background = 'rgba(76, 175, 80, 0.8)';
             });
             
-            btn.addEventListener('touchend', (e) => {
+            const resetTouch = (e) => {
                 e.preventDefault();
                 this.touchControls[action] = false;
                 btn.style.background = 'rgba(76, 175, 80, 0.5)';
-            });
+            };
+            
+            btn.addEventListener('touchend', resetTouch);
+            btn.addEventListener('touchcancel', resetTouch);
         };
         
         addTouchHandler(upBtn, 'moveForward');
@@ -606,7 +611,7 @@ class RobotController {
                     leg.shin.rotation.z = shinAngle;
                 }
                 if (leg.foot) {
-                    leg.foot.position.y = -1.3 + footHeight;
+                    leg.foot.position.y = leg.footBaseY + footHeight;
                 }
             });
         }
