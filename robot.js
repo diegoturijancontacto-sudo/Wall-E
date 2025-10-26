@@ -35,18 +35,13 @@ const createScene = () => {
     );
     light2.intensity = 0.5;
 
-    // Ground
+    // Ground with grid pattern
     const ground = BABYLON.MeshBuilder.CreateGround(
         "ground",
         { width: 50, height: 50 },
         scene
     );
-    const groundMaterial = new BABYLON.StandardMaterial("groundMat", scene);
-    groundMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.5, 0.3);
-    groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-    ground.material = groundMaterial;
-
-    // Add grid pattern to ground
+    
     const gridMaterial = new BABYLON.GridMaterial("gridMat", scene);
     gridMaterial.gridRatio = 2;
     gridMaterial.majorUnitFrequency = 5;
@@ -364,22 +359,21 @@ class RobotController {
     }
 
     update() {
+        // Calculate forward direction vector
+        const getForwardVector = () => new BABYLON.Vector3(
+            Math.sin(this.robot.rotation.y),
+            0,
+            Math.cos(this.robot.rotation.y)
+        );
+
         // Movement
         if (this.keys["w"]) {
-            const forward = this.robot.forward || new BABYLON.Vector3(
-                Math.sin(this.robot.rotation.y),
-                0,
-                Math.cos(this.robot.rotation.y)
-            );
+            const forward = getForwardVector();
             this.robot.position.addInPlace(forward.scale(this.moveSpeed));
             this.animateTracks();
         }
         if (this.keys["s"]) {
-            const backward = this.robot.forward || new BABYLON.Vector3(
-                Math.sin(this.robot.rotation.y),
-                0,
-                Math.cos(this.robot.rotation.y)
-            );
+            const backward = getForwardVector();
             this.robot.position.addInPlace(backward.scale(-this.moveSpeed));
             this.animateTracks();
         }
