@@ -60,153 +60,225 @@ const createScene = () => {
 const createRobot = (scene) => {
     const robot = new BABYLON.TransformNode("robot", scene);
 
-    // Body (main box)
+    // Body (main box) - more compact and Wall-E proportioned
     const body = BABYLON.MeshBuilder.CreateBox(
         "body",
-        { width: 2, height: 1.5, depth: 1.5 },
+        { width: 2.2, height: 1.8, depth: 1.6 },
         scene
     );
-    body.position.y = 1.5;
+    body.position.y = 1.2;
     body.parent = robot;
 
     const bodyMaterial = new BABYLON.StandardMaterial("bodyMat", scene);
-    bodyMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.7, 0.2);
-    bodyMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+    bodyMaterial.diffuseColor = new BABYLON.Color3(0.85, 0.75, 0.25);
+    bodyMaterial.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+    bodyMaterial.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.1);
     body.material = bodyMaterial;
 
-    // Head/Eyes box
+    // Head/Eyes housing - more Wall-E style with binocular shape
     const head = BABYLON.MeshBuilder.CreateBox(
         "head",
-        { width: 1.2, height: 0.6, depth: 0.8 },
+        { width: 1.6, height: 0.7, depth: 0.9 },
         scene
     );
-    head.position = new BABYLON.Vector3(0, 0.9, 0.6);
+    head.position = new BABYLON.Vector3(0, 1.1, 0.5);
     head.parent = body;
 
     const headMaterial = new BABYLON.StandardMaterial("headMat", scene);
-    headMaterial.diffuseColor = new BABYLON.Color3(0.7, 0.6, 0.2);
+    headMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.7, 0.2);
+    headMaterial.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.1);
     head.material = headMaterial;
 
-    // Eyes
+    // Neck/Connector
+    const neck = BABYLON.MeshBuilder.CreateCylinder(
+        "neck",
+        { height: 0.3, diameter: 0.5 },
+        scene
+    );
+    neck.position = new BABYLON.Vector3(0, 0.65, 0.3);
+    neck.parent = body;
+    neck.material = bodyMaterial;
+
+    // Eyes - Wall-E's iconic binocular eyes
     const createEye = (x) => {
+        const eyeBase = new BABYLON.TransformNode("eyeBase", scene);
+        eyeBase.parent = head;
+        
+        // Eye cylinder (the lens housing)
         const eye = BABYLON.MeshBuilder.CreateCylinder(
             "eye",
-            { height: 0.3, diameter: 0.4 },
+            { height: 0.5, diameter: 0.5 },
             scene
         );
         eye.rotation.z = Math.PI / 2;
-        eye.position = new BABYLON.Vector3(x, 0.1, 0.5);
-        eye.parent = head;
+        eye.position = new BABYLON.Vector3(x, 0.1, 0.55);
+        eye.parent = eyeBase;
 
         const eyeMaterial = new BABYLON.StandardMaterial("eyeMat", scene);
-        eyeMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-        eyeMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.4, 0.8);
+        eyeMaterial.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.15);
+        eyeMaterial.specularColor = new BABYLON.Color3(0.5, 0.5, 0.5);
         eye.material = eyeMaterial;
+        
+        // Eye lens (the glowing part)
+        const lens = BABYLON.MeshBuilder.CreateCylinder(
+            "lens",
+            { height: 0.1, diameter: 0.4 },
+            scene
+        );
+        lens.rotation.z = Math.PI / 2;
+        lens.position = new BABYLON.Vector3(x, 0.1, 0.8);
+        lens.parent = eyeBase;
 
-        return eye;
+        const lensMaterial = new BABYLON.StandardMaterial("lensMat", scene);
+        lensMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.5, 0.9);
+        lensMaterial.emissiveColor = new BABYLON.Color3(0.25, 0.45, 0.85);
+        lensMaterial.specularColor = new BABYLON.Color3(0.8, 0.8, 1);
+        lens.material = lensMaterial;
+
+        return eyeBase;
     };
 
-    const leftEye = createEye(-0.3);
-    const rightEye = createEye(0.3);
+    const leftEye = createEye(-0.4);
+    const rightEye = createEye(0.4);
 
-    // Strandbeest-style legs
-    const createLeg = (x, z) => {
-        const leg = new BABYLON.TransformNode("leg", scene);
-        leg.parent = body;
+    // Tracks instead of legs - Wall-E style treads
+    const createTrack = (x) => {
+        const track = new BABYLON.TransformNode("track", scene);
+        track.parent = body;
         
-        // Thigh (upper leg segment)
-        const thigh = BABYLON.MeshBuilder.CreateCylinder(
-            "thigh",
-            { height: 0.8, diameter: 0.15 },
+        // Track body (main tread housing)
+        const trackBody = BABYLON.MeshBuilder.CreateBox(
+            "trackBody",
+            { width: 0.6, height: 0.8, depth: 2.2 },
             scene
         );
-        thigh.rotation.x = Math.PI / 2;
-        thigh.position = new BABYLON.Vector3(x, -0.5, z);
-        thigh.parent = leg;
+        trackBody.position = new BABYLON.Vector3(x, -0.7, 0);
+        trackBody.parent = track;
         
-        // Shin (lower leg segment)
-        const shin = BABYLON.MeshBuilder.CreateCylinder(
-            "shin",
-            { height: 0.6, diameter: 0.12 },
+        const trackMaterial = new BABYLON.StandardMaterial("trackMat", scene);
+        trackMaterial.diffuseColor = new BABYLON.Color3(0.25, 0.25, 0.25);
+        trackMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        trackBody.material = trackMaterial;
+        
+        // Track wheels (visible on sides)
+        const createWheel = (z) => {
+            const wheel = BABYLON.MeshBuilder.CreateCylinder(
+                "wheel",
+                { height: 0.7, diameter: 0.6 },
+                scene
+            );
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position = new BABYLON.Vector3(x, -0.7, z);
+            wheel.parent = track;
+            
+            const wheelMaterial = new BABYLON.StandardMaterial("wheelMat", scene);
+            wheelMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            wheel.material = wheelMaterial;
+            
+            return wheel;
+        };
+        
+        const frontWheel = createWheel(0.8);
+        const backWheel = createWheel(-0.8);
+        
+        // Tread detail (top and bottom plates)
+        const treadTop = BABYLON.MeshBuilder.CreateBox(
+            "treadTop",
+            { width: 0.7, height: 0.15, depth: 2.4 },
             scene
         );
-        shin.rotation.x = Math.PI / 2;
-        shin.position = new BABYLON.Vector3(x, -0.9, z + 0.4);
-        shin.parent = leg;
+        treadTop.position = new BABYLON.Vector3(x, -0.3, 0);
+        treadTop.parent = track;
+        treadTop.material = trackMaterial;
         
-        // Foot
-        const foot = BABYLON.MeshBuilder.CreateSphere(
-            "foot",
-            { diameter: 0.2 },
+        const treadBottom = BABYLON.MeshBuilder.CreateBox(
+            "treadBottom",
+            { width: 0.7, height: 0.15, depth: 2.4 },
             scene
         );
-        const footBaseY = -1.3; // Base Y position for foot
-        foot.position = new BABYLON.Vector3(x, footBaseY, z + 0.7);
-        foot.parent = leg;
+        treadBottom.position = new BABYLON.Vector3(x, -1.1, 0);
+        treadBottom.parent = track;
+        treadBottom.material = trackMaterial;
         
-        const legMaterial = new BABYLON.StandardMaterial("legMat", scene);
-        legMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
-        thigh.material = legMaterial;
-        shin.material = legMaterial;
-        foot.material = legMaterial;
+        track.wheels = [frontWheel, backWheel];
         
-        leg.thigh = thigh;
-        leg.shin = shin;
-        leg.foot = foot;
-        leg.footBaseY = footBaseY; // Store for animation
-        
-        return leg;
+        return track;
     };
 
-    // Create 4 legs (Strandbeest style - 2 on each side)
-    const legs = [];
-    legs.push(createLeg(-0.8, -0.5));  // Left front
-    legs.push(createLeg(-0.8, 0.5));   // Left back
-    legs.push(createLeg(0.8, -0.5));   // Right front
-    legs.push(createLeg(0.8, 0.5));    // Right back
+    // Create tracks (Wall-E's signature treads)
+    const tracks = [];
+    tracks.push(createTrack(-1.1));  // Left track
+    tracks.push(createTrack(1.1));   // Right track
 
     // Hatch (compuerta) - front panel that opens
     const hatch = BABYLON.MeshBuilder.CreateBox(
         "hatch",
-        { width: 1.5, height: 1.2, depth: 0.1 },
+        { width: 1.7, height: 1.4, depth: 0.15 },
         scene
     );
-    hatch.position = new BABYLON.Vector3(0, -0.1, 0.75);
-    hatch.setPivotPoint(new BABYLON.Vector3(0, -0.6, 0));
+    hatch.position = new BABYLON.Vector3(0, -0.2, 0.8);
+    hatch.setPivotPoint(new BABYLON.Vector3(0, -0.7, 0));
     hatch.parent = body;
 
     const hatchMaterial = new BABYLON.StandardMaterial("hatchMat", scene);
-    hatchMaterial.diffuseColor = new BABYLON.Color3(0.6, 0.5, 0.2);
-    hatchMaterial.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+    hatchMaterial.diffuseColor = new BABYLON.Color3(0.65, 0.55, 0.2);
+    hatchMaterial.specularColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+    hatchMaterial.ambientColor = new BABYLON.Color3(0.25, 0.25, 0.1);
     hatch.material = hatchMaterial;
 
-    // Arms (simple boxes)
+    // Arms - Wall-E's simple arms
     const createArm = (x) => {
-        const arm = BABYLON.MeshBuilder.CreateBox(
-            "arm",
-            { width: 0.2, height: 0.8, depth: 0.2 },
+        const armGroup = new BABYLON.TransformNode("armGroup", scene);
+        armGroup.parent = body;
+        
+        // Upper arm
+        const upperArm = BABYLON.MeshBuilder.CreateBox(
+            "upperArm",
+            { width: 0.25, height: 0.6, depth: 0.25 },
             scene
         );
-        arm.position = new BABYLON.Vector3(x, -0.2, 0);
-        arm.parent = body;
+        upperArm.position = new BABYLON.Vector3(x, 0.1, 0);
+        upperArm.parent = armGroup;
+
+        // Lower arm
+        const lowerArm = BABYLON.MeshBuilder.CreateBox(
+            "lowerArm",
+            { width: 0.2, height: 0.5, depth: 0.2 },
+            scene
+        );
+        lowerArm.position = new BABYLON.Vector3(x, -0.35, 0.2);
+        lowerArm.parent = armGroup;
+        
+        // Hand/Gripper
+        const hand = BABYLON.MeshBuilder.CreateBox(
+            "hand",
+            { width: 0.3, height: 0.15, depth: 0.3 },
+            scene
+        );
+        hand.position = new BABYLON.Vector3(x, -0.65, 0.3);
+        hand.parent = armGroup;
 
         const armMaterial = new BABYLON.StandardMaterial("armMat", scene);
-        armMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.5, 0.5);
-        arm.material = armMaterial;
+        armMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+        armMaterial.specularColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        upperArm.material = armMaterial;
+        lowerArm.material = armMaterial;
+        hand.material = armMaterial;
 
-        return arm;
+        return armGroup;
     };
 
-    const leftArm = createArm(-1.1);
-    const rightArm = createArm(1.1);
+    const leftArm = createArm(-1.2);
+    const rightArm = createArm(1.2);
 
-    robot.position.y = 0.5;
+    robot.position.y = 0.3;
 
     // Store references
     robot.body = body;
     robot.head = head;
+    robot.neck = neck;
     robot.hatch = hatch;
-    robot.legs = legs;
+    robot.tracks = tracks;
     robot.leftEye = leftEye;
     robot.rightEye = rightEye;
 
@@ -264,8 +336,9 @@ class RobotController {
             position: absolute;
             bottom: 20px;
             width: 100%;
-            display: none;
+            display: block;
             pointer-events: none;
+            z-index: 1000;
         `;
         
         // Movement controls (left side)
@@ -277,31 +350,45 @@ class RobotController {
             pointer-events: auto;
         `;
         
-        const createTouchButton = (label, top, left) => {
+        const createTouchButton = (label, top, left, size = 60) => {
             const btn = document.createElement('button');
             btn.textContent = label;
             btn.style.cssText = `
                 position: absolute;
                 top: ${top}px;
                 left: ${left}px;
-                width: 60px;
-                height: 60px;
-                background: rgba(76, 175, 80, 0.5);
-                border: 2px solid rgba(76, 175, 80, 0.8);
+                width: ${size}px;
+                height: ${size}px;
+                background: rgba(76, 175, 80, 0.6);
+                border: 3px solid rgba(76, 175, 80, 0.9);
                 border-radius: 50%;
                 color: white;
-                font-size: 18px;
+                font-size: 22px;
                 font-weight: bold;
                 touch-action: none;
                 user-select: none;
+                cursor: pointer;
+                transition: all 0.2s ease;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             `;
+            
+            // Add hover effect
+            btn.addEventListener('mouseenter', () => {
+                btn.style.background = 'rgba(76, 175, 80, 0.8)';
+                btn.style.transform = 'scale(1.05)';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.background = 'rgba(76, 175, 80, 0.6)';
+                btn.style.transform = 'scale(1)';
+            });
+            
             return btn;
         };
         
-        const upBtn = createTouchButton('↑', 0, 60);
-        const downBtn = createTouchButton('↓', 120, 60);
-        const leftBtn = createTouchButton('←', 60, 0);
-        const rightBtn = createTouchButton('→', 60, 120);
+        const upBtn = createTouchButton('↑', 0, 65, 65);
+        const downBtn = createTouchButton('↓', 130, 65, 65);
+        const leftBtn = createTouchButton('←', 65, 0, 65);
+        const rightBtn = createTouchButton('→', 65, 130, 65);
         
         movementControls.appendChild(upBtn);
         movementControls.appendChild(downBtn);
@@ -313,27 +400,29 @@ class RobotController {
         rotationControls.style.cssText = `
             position: absolute;
             right: 20px;
-            bottom: 60px;
+            bottom: 0;
             pointer-events: auto;
         `;
         
-        const rotLeftBtn = createTouchButton('⟲', 0, 0);
-        const rotRightBtn = createTouchButton('⟳', 0, 80);
+        const rotLeftBtn = createTouchButton('⟲', 35, 0, 65);
+        const rotRightBtn = createTouchButton('⟳', 35, 85, 65);
         
         rotationControls.appendChild(rotLeftBtn);
         rotationControls.appendChild(rotRightBtn);
         
-        // Action buttons (right side, top)
+        // Action buttons (right side, middle)
         const actionControls = document.createElement('div');
         actionControls.style.cssText = `
             position: absolute;
             right: 20px;
-            top: 200px;
+            bottom: 220px;
             pointer-events: auto;
         `;
         
-        const hatchBtn = createTouchButton('🚪', 0, 0);
-        const cubeBtn = createTouchButton('◻', 70, 0);
+        const hatchBtn = createTouchButton('🚪', 0, 42.5, 65);
+        hatchBtn.title = 'Abrir/Cerrar compuerta';
+        const cubeBtn = createTouchButton('◻', 80, 42.5, 65);
+        cubeBtn.title = 'Transformar a cubo';
         
         actionControls.appendChild(hatchBtn);
         actionControls.appendChild(cubeBtn);
@@ -343,27 +432,46 @@ class RobotController {
         touchContainer.appendChild(actionControls);
         document.body.appendChild(touchContainer);
         
-        // Show touch controls on mobile
-        if (('ontouchstart' in window) || (navigator.maxTouchPoints > 0)) {
-            touchContainer.style.display = 'block';
-        }
+        // Always show touch controls
+        touchContainer.style.display = 'block';
         
-        // Touch event handlers
+        // Touch and mouse event handlers
         const addTouchHandler = (btn, action) => {
+            // Touch events
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 this.touchControls[action] = true;
-                btn.style.background = 'rgba(76, 175, 80, 0.8)';
+                btn.style.background = 'rgba(76, 175, 80, 1)';
+                btn.style.transform = 'scale(0.95)';
             });
             
             const resetTouch = (e) => {
                 e.preventDefault();
                 this.touchControls[action] = false;
-                btn.style.background = 'rgba(76, 175, 80, 0.5)';
+                btn.style.background = 'rgba(76, 175, 80, 0.6)';
+                btn.style.transform = 'scale(1)';
             };
             
             btn.addEventListener('touchend', resetTouch);
             btn.addEventListener('touchcancel', resetTouch);
+            
+            // Mouse events (for desktop)
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                this.touchControls[action] = true;
+                btn.style.background = 'rgba(76, 175, 80, 1)';
+                btn.style.transform = 'scale(0.95)';
+            });
+            
+            const resetMouse = (e) => {
+                e.preventDefault();
+                this.touchControls[action] = false;
+                btn.style.background = 'rgba(76, 175, 80, 0.6)';
+                btn.style.transform = 'scale(1)';
+            };
+            
+            btn.addEventListener('mouseup', resetMouse);
+            btn.addEventListener('mouseleave', resetMouse);
         };
         
         addTouchHandler(upBtn, 'moveForward');
@@ -373,15 +481,25 @@ class RobotController {
         addTouchHandler(rotLeftBtn, 'rotateLeft');
         addTouchHandler(rotRightBtn, 'rotateRight');
         
-        hatchBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.toggleHatch();
-        });
+        // Action buttons
+        const addActionHandler = (btn, callback) => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                callback();
+                btn.style.transform = 'scale(0.9)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 200);
+            });
+            
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                callback();
+                btn.style.transform = 'scale(0.9)';
+                setTimeout(() => btn.style.transform = 'scale(1)', 200);
+            });
+        };
         
-        cubeBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.toggleCube();
-        });
+        addActionHandler(hatchBtn, () => this.toggleHatch());
+        addActionHandler(cubeBtn, () => this.toggleCube());
     }
 
     toggleHatch() {
@@ -579,39 +697,27 @@ class RobotController {
             this.robot.rotation.y -= this.rotateSpeed;
         }
 
-        // Animate legs when moving
+        // Animate tracks when moving
         if (isMoving) {
-            this.animateLegs();
+            this.animateTracks();
         }
 
         // Keep robot on ground
-        if (this.robot.position.y < 0.5) {
-            this.robot.position.y = 0.5;
+        if (this.robot.position.y < 0.3) {
+            this.robot.position.y = 0.3;
         }
     }
 
-    animateLegs() {
-        // Strandbeest-style walking animation
+    animateTracks() {
+        // Rotate track wheels to simulate movement
         this.walkCycle += 0.15;
         
-        if (this.robot.legs && this.robot.legs.length > 0) {
-            this.robot.legs.forEach((leg, index) => {
-                // Alternate leg movement (front and back on opposite phases)
-                const phase = (index % 2 === 0) ? this.walkCycle : this.walkCycle + Math.PI;
-                
-                // Strandbeest-inspired motion
-                const thighAngle = Math.sin(phase) * 0.5;
-                const shinAngle = Math.sin(phase + Math.PI / 4) * 0.4;
-                const footHeight = Math.abs(Math.sin(phase)) * 0.3;
-                
-                if (leg.thigh) {
-                    leg.thigh.rotation.z = thighAngle;
-                }
-                if (leg.shin) {
-                    leg.shin.rotation.z = shinAngle;
-                }
-                if (leg.foot) {
-                    leg.foot.position.y = leg.footBaseY + footHeight;
+        if (this.robot.tracks && this.robot.tracks.length > 0) {
+            this.robot.tracks.forEach((track) => {
+                if (track.wheels) {
+                    track.wheels.forEach((wheel) => {
+                        wheel.rotation.x = this.walkCycle;
+                    });
                 }
             });
         }
