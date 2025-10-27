@@ -276,6 +276,7 @@ const createRobot = (scene) => {
     // Store references
     robot.body = body;
     robot.head = head;
+    robot.neck = neck;
     robot.hatch = hatch;
     robot.tracks = tracks;
     robot.leftEye = leftEye;
