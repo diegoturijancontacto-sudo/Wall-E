@@ -632,3 +632,508 @@ engine.runRenderLoop(() => {
 window.addEventListener("resize", () => {
     engine.resize();
 });
+
+// ============================================
+// BLOCKLY INTEGRATION
+// ============================================
+
+// Wait for Blockly to load
+let blocklyWorkspace = null;
+let blocklyInitialized = false;
+
+function initializeBlockly() {
+    if (blocklyInitialized || typeof Blockly === 'undefined') {
+        return;
+    }
+    
+    blocklyInitialized = true;
+    
+    // Define custom blocks for robot control
+    Blockly.Blocks['robot_move_forward'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🤖 Mover adelante")
+                .appendField(new Blockly.FieldNumber(1, 0.1, 10, 0.1), "DISTANCE")
+                .appendField("unidades");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(120);
+            this.setTooltip("Mueve el robot hacia adelante");
+        }
+    };
+    
+    Blockly.Blocks['robot_move_backward'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🤖 Mover atrás")
+                .appendField(new Blockly.FieldNumber(1, 0.1, 10, 0.1), "DISTANCE")
+                .appendField("unidades");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(120);
+            this.setTooltip("Mueve el robot hacia atrás");
+        }
+    };
+    
+    Blockly.Blocks['robot_rotate_left'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("↶ Girar izquierda")
+                .appendField(new Blockly.FieldAngle(90), "ANGLE")
+                .appendField("grados");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(230);
+            this.setTooltip("Gira el robot a la izquierda");
+        }
+    };
+    
+    Blockly.Blocks['robot_rotate_right'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("↷ Girar derecha")
+                .appendField(new Blockly.FieldAngle(90), "ANGLE")
+                .appendField("grados");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(230);
+            this.setTooltip("Gira el robot a la derecha");
+        }
+    };
+    
+    Blockly.Blocks['robot_toggle_hatch'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🚪 Abrir/Cerrar compuerta");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(300);
+            this.setTooltip("Abre o cierra la compuerta del robot");
+        }
+    };
+    
+    Blockly.Blocks['robot_transform'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("◻ Transformar robot");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(300);
+            this.setTooltip("Transforma el robot en cubo o viceversa");
+        }
+    };
+    
+    Blockly.Blocks['robot_wait'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("⏱️ Esperar")
+                .appendField(new Blockly.FieldNumber(1, 0.1, 10, 0.1), "SECONDS")
+                .appendField("segundos");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(160);
+            this.setTooltip("Espera un tiempo antes de continuar");
+        }
+    };
+    
+    // Code generators
+    Blockly.JavaScript['robot_move_forward'] = function(block) {
+        const distance = block.getFieldValue('DISTANCE');
+        return `await moveForward(${distance});\n`;
+    };
+    
+    Blockly.JavaScript['robot_move_backward'] = function(block) {
+        const distance = block.getFieldValue('DISTANCE');
+        return `await moveBackward(${distance});\n`;
+    };
+    
+    Blockly.JavaScript['robot_rotate_left'] = function(block) {
+        const angle = block.getFieldValue('ANGLE');
+        return `await rotateLeft(${angle});\n`;
+    };
+    
+    Blockly.JavaScript['robot_rotate_right'] = function(block) {
+        const angle = block.getFieldValue('ANGLE');
+        return `await rotateRight(${angle});\n`;
+    };
+    
+    Blockly.JavaScript['robot_toggle_hatch'] = function(block) {
+        return `await toggleHatch();\n`;
+    };
+    
+    Blockly.JavaScript['robot_transform'] = function(block) {
+        return `await transformRobot();\n`;
+    };
+    
+    Blockly.JavaScript['robot_wait'] = function(block) {
+        const seconds = block.getFieldValue('SECONDS');
+        return `await wait(${seconds});\n`;
+    };
+    
+    // Create Blockly workspace
+    blocklyWorkspace = Blockly.inject('blocklyDiv', {
+        toolbox: {
+            kind: 'categoryToolbox',
+            contents: [
+                {
+                    kind: 'category',
+                    name: 'Movimiento',
+                    colour: '120',
+                    contents: [
+                        { kind: 'block', type: 'robot_move_forward' },
+                        { kind: 'block', type: 'robot_move_backward' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Rotación',
+                    colour: '230',
+                    contents: [
+                        { kind: 'block', type: 'robot_rotate_left' },
+                        { kind: 'block', type: 'robot_rotate_right' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Acciones',
+                    colour: '300',
+                    contents: [
+                        { kind: 'block', type: 'robot_toggle_hatch' },
+                        { kind: 'block', type: 'robot_transform' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Tiempo',
+                    colour: '160',
+                    contents: [
+                        { kind: 'block', type: 'robot_wait' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Lógica',
+                    colour: '210',
+                    contents: [
+                        { kind: 'block', type: 'controls_if' },
+                        { kind: 'block', type: 'logic_compare' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Bucles',
+                    colour: '120',
+                    contents: [
+                        { kind: 'block', type: 'controls_repeat_ext' },
+                        { kind: 'block', type: 'controls_whileUntil' },
+                    ]
+                },
+            ]
+        },
+        zoom: {
+            controls: true,
+            wheel: true,
+            startScale: 1.0,
+            maxScale: 3,
+            minScale: 0.3,
+            scaleSpeed: 1.2
+        },
+        trashcan: true,
+        scrollbars: true,
+        sounds: true,
+        grid: {
+            spacing: 20,
+            length: 3,
+            colour: '#ccc',
+            snap: true
+        }
+    });
+}
+
+// Program execution system
+let isExecutingProgram = false;
+let shouldStopExecution = false;
+
+const programAPI = {
+    async moveForward(distance) {
+        const steps = Math.floor(distance * 10);
+        for (let i = 0; i < steps; i++) {
+            if (shouldStopExecution) break;
+            controller.keys['w'] = true;
+            await new Promise(resolve => setTimeout(resolve, 100));
+            controller.keys['w'] = false;
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+    },
+    
+    async moveBackward(distance) {
+        const steps = Math.floor(distance * 10);
+        for (let i = 0; i < steps; i++) {
+            if (shouldStopExecution) break;
+            controller.keys['s'] = true;
+            await new Promise(resolve => setTimeout(resolve, 100));
+            controller.keys['s'] = false;
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+    },
+    
+    async rotateLeft(angle) {
+        const radians = angle * Math.PI / 180;
+        const steps = Math.floor(Math.abs(radians) / controller.rotateSpeed);
+        for (let i = 0; i < steps; i++) {
+            if (shouldStopExecution) break;
+            controller.keys['q'] = true;
+            await new Promise(resolve => setTimeout(resolve, 50));
+            controller.keys['q'] = false;
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+    },
+    
+    async rotateRight(angle) {
+        const radians = angle * Math.PI / 180;
+        const steps = Math.floor(Math.abs(radians) / controller.rotateSpeed);
+        for (let i = 0; i < steps; i++) {
+            if (shouldStopExecution) break;
+            controller.keys['e'] = true;
+            await new Promise(resolve => setTimeout(resolve, 50));
+            controller.keys['e'] = false;
+        }
+        await new Promise(resolve => setTimeout(resolve, 200));
+    },
+    
+    async toggleHatch() {
+        if (shouldStopExecution) return;
+        controller.toggleHatch();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    },
+    
+    async transformRobot() {
+        if (shouldStopExecution) return;
+        controller.toggleCube();
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    },
+    
+    async wait(seconds) {
+        if (shouldStopExecution) return;
+        await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    }
+};
+
+async function executeBlocklyProgram() {
+    if (isExecutingProgram || !blocklyWorkspace) return;
+    
+    isExecutingProgram = true;
+    shouldStopExecution = false;
+    
+    try {
+        const code = Blockly.JavaScript.workspaceToCode(blocklyWorkspace);
+        
+        // Create execution context with API
+        const executeCode = new Function(
+            'moveForward', 'moveBackward', 'rotateLeft', 'rotateRight',
+            'toggleHatch', 'transformRobot', 'wait',
+            `return (async function() {\n${code}\n})();`
+        );
+        
+        await executeCode(
+            programAPI.moveForward.bind(programAPI),
+            programAPI.moveBackward.bind(programAPI),
+            programAPI.rotateLeft.bind(programAPI),
+            programAPI.rotateRight.bind(programAPI),
+            programAPI.toggleHatch.bind(programAPI),
+            programAPI.transformRobot.bind(programAPI),
+            programAPI.wait.bind(programAPI)
+        );
+        
+        if (!shouldStopExecution) {
+            alert('✅ Programa completado!');
+        }
+    } catch (error) {
+        console.error('Error executing program:', error);
+        alert('❌ Error al ejecutar el programa: ' + error.message);
+    } finally {
+        isExecutingProgram = false;
+        shouldStopExecution = false;
+    }
+}
+
+function stopBlocklyProgram() {
+    shouldStopExecution = true;
+    isExecutingProgram = false;
+    // Reset all keys
+    Object.keys(controller.keys).forEach(key => {
+        controller.keys[key] = false;
+    });
+}
+
+function resetRobotPosition() {
+    robot.position = new BABYLON.Vector3(0, 0.5, 0);
+    robot.rotation = new BABYLON.Vector3(0, 0, 0);
+    
+    // Reset body scaling if transformed
+    if (robot.body) {
+        robot.body.scaling = new BABYLON.Vector3(1, 1, 1);
+    }
+    if (robot.head) {
+        robot.head.scaling = new BABYLON.Vector3(1, 1, 1);
+    }
+    if (robot.hatch) {
+        robot.hatch.scaling = new BABYLON.Vector3(1, 1, 1);
+        robot.hatch.rotation.x = 0;
+    }
+    
+    controller.isCube = false;
+    controller.hatchOpen = false;
+}
+
+// ============================================
+// MENU AND UI SYSTEM
+// ============================================
+
+let currentView = 'robot'; // 'robot' or 'blockly'
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Blockly after a short delay
+    setTimeout(initializeBlockly, 500);
+    
+    // Menu toggle
+    const menuToggle = document.getElementById('menuToggle');
+    const sideMenu = document.getElementById('sideMenu');
+    const closeMenu = document.getElementById('closeMenu');
+    
+    menuToggle?.addEventListener('click', () => {
+        sideMenu.classList.toggle('open');
+    });
+    
+    closeMenu?.addEventListener('click', () => {
+        sideMenu.classList.remove('open');
+    });
+    
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+        if (sideMenu.classList.contains('open') && 
+            !sideMenu.contains(e.target) && 
+            !menuToggle.contains(e.target)) {
+            sideMenu.classList.remove('open');
+        }
+    });
+    
+    // View switching
+    const viewRobot = document.getElementById('viewRobot');
+    const viewBlockly = document.getElementById('viewBlockly');
+    const blocklyDiv = document.getElementById('blocklyDiv');
+    const blocklyControls = document.getElementById('blocklyControls');
+    const renderCanvas = document.getElementById('renderCanvas');
+    
+    viewRobot?.addEventListener('click', () => {
+        currentView = 'robot';
+        blocklyDiv.classList.remove('active');
+        blocklyControls.classList.remove('active');
+        renderCanvas.style.display = 'block';
+        viewRobot.classList.add('active');
+        viewBlockly.classList.remove('active');
+        sideMenu.classList.remove('open');
+    });
+    
+    viewBlockly?.addEventListener('click', () => {
+        currentView = 'blockly';
+        blocklyDiv.classList.add('active');
+        blocklyControls.classList.add('active');
+        renderCanvas.style.display = 'none';
+        viewBlockly.classList.add('active');
+        viewRobot.classList.remove('active');
+        sideMenu.classList.remove('open');
+        
+        // Resize Blockly workspace
+        if (blocklyWorkspace) {
+            Blockly.svgResize(blocklyWorkspace);
+        }
+    });
+    
+    // Blockly controls
+    const runBlockly = document.getElementById('runBlockly');
+    const stopBlockly = document.getElementById('stopBlockly');
+    const resetRobot = document.getElementById('resetRobot');
+    
+    runBlockly?.addEventListener('click', () => {
+        // Switch to robot view to see execution
+        currentView = 'robot';
+        blocklyDiv.classList.remove('active');
+        blocklyControls.classList.remove('active');
+        renderCanvas.style.display = 'block';
+        executeBlocklyProgram();
+    });
+    
+    stopBlockly?.addEventListener('click', () => {
+        stopBlocklyProgram();
+    });
+    
+    resetRobot?.addEventListener('click', () => {
+        stopBlocklyProgram();
+        resetRobotPosition();
+    });
+    
+    // Save/Load program
+    const saveProgram = document.getElementById('saveProgram');
+    const loadProgram = document.getElementById('loadProgram');
+    const clearProgram = document.getElementById('clearProgram');
+    
+    saveProgram?.addEventListener('click', () => {
+        if (!blocklyWorkspace) return;
+        
+        const xml = Blockly.Xml.workspaceToDom(blocklyWorkspace);
+        const xmlText = Blockly.Xml.domToText(xml);
+        
+        const blob = new Blob([xmlText], { type: 'text/xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'robot-program.xml';
+        a.click();
+        URL.revokeObjectURL(url);
+        
+        alert('✅ Programa guardado!');
+        sideMenu.classList.remove('open');
+    });
+    
+    loadProgram?.addEventListener('click', () => {
+        if (!blocklyWorkspace) return;
+        
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.xml';
+        
+        input.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const xmlText = event.target.result;
+                    const xml = Blockly.Xml.textToDom(xmlText);
+                    blocklyWorkspace.clear();
+                    Blockly.Xml.domToWorkspace(xml, blocklyWorkspace);
+                    alert('✅ Programa cargado!');
+                } catch (error) {
+                    alert('❌ Error al cargar el programa');
+                    console.error(error);
+                }
+            };
+            reader.readAsText(file);
+        };
+        
+        input.click();
+        sideMenu.classList.remove('open');
+    });
+    
+    clearProgram?.addEventListener('click', () => {
+        if (!blocklyWorkspace) return;
+        
+        if (confirm('¿Estás seguro de que quieres limpiar el workspace?')) {
+            blocklyWorkspace.clear();
+            alert('✅ Workspace limpio!');
+        }
+        sideMenu.classList.remove('open');
+    });
+});
