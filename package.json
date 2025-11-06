@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "babylonjs": "^8.33.2",
-    "babylonjs-materials": "^8.33.2"
+    "babylonjs-materials": "^8.33.2",
+    "blockly": "^12.3.1"
   }
 }
