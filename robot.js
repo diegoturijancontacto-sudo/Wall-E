@@ -297,6 +297,25 @@ class RobotController {
         this.cubeTransition = 0;
         this.walkCycle = 0; // For leg animation
         
+        // Component configuration constants
+        this.JUMP_HEIGHT = 3;
+        this.JUMP_DURATION = 60;
+        this.FLY_HEIGHT = 5;
+        this.EVENT_MOVE_DISTANCE = 2;
+        
+        // Component system (Unity Inspector style)
+        this.components = {
+            jump: false,
+            lights: false,
+            fly: false
+        };
+        
+        this.isJumping = false;
+        this.isFlying = false;
+        this.flyHeight = 0;
+        this.lightsEnabled = false;
+        this.robotLights = null;
+        
         this.keys = {};
         this.touchControls = {
             moveForward: false,
@@ -722,6 +741,129 @@ class RobotController {
             });
         }
     }
+    
+    // Component methods
+    jump() {
+        if (!this.components.jump || this.isJumping) return;
+        
+        this.isJumping = true;
+        const startY = this.robot.position.y;
+        const jumpHeight = this.JUMP_HEIGHT;
+        const jumpDuration = this.JUMP_DURATION;
+        
+        const jumpAnim = new BABYLON.Animation(
+            "jumpAnimation",
+            "position.y",
+            30,
+            BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+        );
+        
+        const keys = [
+            { frame: 0, value: startY },
+            { frame: jumpDuration / 2, value: startY + jumpHeight },
+            { frame: jumpDuration, value: startY }
+        ];
+        
+        jumpAnim.setKeys(keys);
+        this.robot.animations = [jumpAnim];
+        this.scene.beginAnimation(this.robot, 0, jumpDuration, false, 1, () => {
+            this.isJumping = false;
+        });
+    }
+    
+    toggleLights() {
+        if (!this.components.lights) return;
+        
+        this.lightsEnabled = !this.lightsEnabled;
+        
+        if (this.lightsEnabled) {
+            // Create lights on robot
+            if (!this.robotLights) {
+                this.robotLights = new BABYLON.PointLight(
+                    "robotLight",
+                    new BABYLON.Vector3(0, 2, 0),
+                    this.scene
+                );
+                this.robotLights.parent = this.robot;
+                this.robotLights.diffuse = new BABYLON.Color3(1, 1, 0);
+                this.robotLights.specular = new BABYLON.Color3(1, 1, 0);
+                this.robotLights.intensity = 2;
+            }
+            this.robotLights.setEnabled(true);
+            
+            // Add glow to eyes
+            if (this.robot.leftEye && this.robot.rightEye) {
+                const leftLens = this.robot.leftEye.getChildMeshes().find(m => m.name === "lens");
+                const rightLens = this.robot.rightEye.getChildMeshes().find(m => m.name === "lens");
+                if (leftLens && leftLens.material) {
+                    leftLens.material.emissiveColor = new BABYLON.Color3(1, 1, 0);
+                }
+                if (rightLens && rightLens.material) {
+                    rightLens.material.emissiveColor = new BABYLON.Color3(1, 1, 0);
+                }
+            }
+        } else {
+            if (this.robotLights) {
+                this.robotLights.setEnabled(false);
+            }
+            
+            // Reset eye color
+            if (this.robot.leftEye && this.robot.rightEye) {
+                const leftLens = this.robot.leftEye.getChildMeshes().find(m => m.name === "lens");
+                const rightLens = this.robot.rightEye.getChildMeshes().find(m => m.name === "lens");
+                if (leftLens && leftLens.material) {
+                    leftLens.material.emissiveColor = new BABYLON.Color3(0.25, 0.45, 0.85);
+                }
+                if (rightLens && rightLens.material) {
+                    rightLens.material.emissiveColor = new BABYLON.Color3(0.25, 0.45, 0.85);
+                }
+            }
+        }
+    }
+    
+    toggleFly() {
+        if (!this.components.fly) return;
+        
+        this.isFlying = !this.isFlying;
+        
+        if (this.isFlying) {
+            this.flyHeight = this.FLY_HEIGHT;
+            const flyAnim = new BABYLON.Animation(
+                "flyAnimation",
+                "position.y",
+                30,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            
+            const keys = [
+                { frame: 0, value: this.robot.position.y },
+                { frame: 30, value: this.flyHeight }
+            ];
+            
+            flyAnim.setKeys(keys);
+            this.robot.animations = [flyAnim];
+            this.scene.beginAnimation(this.robot, 0, 30, false);
+        } else {
+            const landAnim = new BABYLON.Animation(
+                "landAnimation",
+                "position.y",
+                30,
+                BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+                BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT
+            );
+            
+            const keys = [
+                { frame: 0, value: this.robot.position.y },
+                { frame: 30, value: 0.3 }
+            ];
+            
+            landAnim.setKeys(keys);
+            this.robot.animations = [landAnim];
+            this.scene.beginAnimation(this.robot, 0, 30, false);
+        }
+    }
 }
 
 // Initialize the scene
@@ -842,6 +984,69 @@ function initializeBlockly() {
         }
     };
     
+    // Component blocks
+    Blockly.Blocks['robot_jump'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🦘 Saltar");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(60);
+            this.setTooltip("Hace que el robot salte (requiere componente Saltar)");
+        }
+    };
+    
+    Blockly.Blocks['robot_toggle_lights'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("💡 Encender/Apagar Luces");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(45);
+            this.setTooltip("Enciende o apaga las luces del robot (requiere componente Luces)");
+        }
+    };
+    
+    Blockly.Blocks['robot_toggle_fly'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("✈️ Volar/Aterrizar");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(200);
+            this.setTooltip("Hace que el robot vuele o aterrice (requiere componente Volar)");
+        }
+    };
+    
+    // Event blocks (while-running events)
+    Blockly.Blocks['robot_on_move'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🏃 Mientras se mueve");
+            this.appendStatementInput("DO")
+                .appendField("hacer");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(290);
+            this.setTooltip("Ejecuta acciones mientras el robot está en movimiento");
+        }
+    };
+    
+    Blockly.Blocks['robot_repeat_while_moving'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🔁 Repetir mientras avanza")
+                .appendField(new Blockly.FieldNumber(3, 1, 10, 1), "TIMES")
+                .appendField("veces");
+            this.appendStatementInput("DO")
+                .appendField("hacer");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(290);
+            this.setTooltip("Repite acciones mientras el robot se mueve adelante");
+        }
+    };
+    
     // Code generators
     Blockly.JavaScript['robot_move_forward'] = function(block) {
         const distance = block.getFieldValue('DISTANCE');
@@ -876,6 +1081,31 @@ function initializeBlockly() {
         return `await wait(${seconds});\n`;
     };
     
+    // Component code generators
+    Blockly.JavaScript['robot_jump'] = function(block) {
+        return `await jumpRobot();\n`;
+    };
+    
+    Blockly.JavaScript['robot_toggle_lights'] = function(block) {
+        return `await toggleLights();\n`;
+    };
+    
+    Blockly.JavaScript['robot_toggle_fly'] = function(block) {
+        return `await toggleFly();\n`;
+    };
+    
+    // Event code generators
+    Blockly.JavaScript['robot_on_move'] = function(block) {
+        const statements = Blockly.JavaScript.statementToCode(block, 'DO');
+        return `await executeWhileMoving(async () => {\n${statements}});\n`;
+    };
+    
+    Blockly.JavaScript['robot_repeat_while_moving'] = function(block) {
+        const times = block.getFieldValue('TIMES');
+        const statements = Blockly.JavaScript.statementToCode(block, 'DO');
+        return `await repeatWhileMoving(${times}, async () => {\n${statements}});\n`;
+    };
+    
     // Create Blockly workspace
     blocklyWorkspace = Blockly.inject('blocklyDiv', {
         toolbox: {
@@ -906,6 +1136,25 @@ function initializeBlockly() {
                     contents: [
                         { kind: 'block', type: 'robot_toggle_hatch' },
                         { kind: 'block', type: 'robot_transform' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Componentes',
+                    colour: '60',
+                    contents: [
+                        { kind: 'block', type: 'robot_jump' },
+                        { kind: 'block', type: 'robot_toggle_lights' },
+                        { kind: 'block', type: 'robot_toggle_fly' },
+                    ]
+                },
+                {
+                    kind: 'category',
+                    name: 'Eventos',
+                    colour: '290',
+                    contents: [
+                        { kind: 'block', type: 'robot_on_move' },
+                        { kind: 'block', type: 'robot_repeat_while_moving' },
                     ]
                 },
                 {
@@ -1022,6 +1271,65 @@ const programAPI = {
     async wait(seconds) {
         if (shouldStopExecution) return;
         await new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    },
+    
+    // Component API methods
+    async jumpRobot() {
+        if (shouldStopExecution) return;
+        if (!controller.components.jump) {
+            console.warn('Component "Saltar" not enabled. Enable it in the Inspector.');
+            return;
+        }
+        controller.jump();
+        await new Promise(resolve => setTimeout(resolve, 2000));
+    },
+    
+    async toggleLights() {
+        if (shouldStopExecution) return;
+        if (!controller.components.lights) {
+            console.warn('Component "Luces" not enabled. Enable it in the Inspector.');
+            return;
+        }
+        controller.toggleLights();
+        await new Promise(resolve => setTimeout(resolve, 500));
+    },
+    
+    async toggleFly() {
+        if (shouldStopExecution) return;
+        if (!controller.components.fly) {
+            console.warn('Component "Volar" not enabled. Enable it in the Inspector.');
+            return;
+        }
+        controller.toggleFly();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+    },
+    
+    // Event-based methods
+    async executeWhileMoving(callback) {
+        if (shouldStopExecution) return;
+        
+        // Start moving forward
+        const movePromise = this.moveForward(controller.EVENT_MOVE_DISTANCE);
+        
+        // Execute callback while moving
+        const callbackPromise = callback();
+        
+        // Wait for both to complete
+        await Promise.all([movePromise, callbackPromise]);
+    },
+    
+    async repeatWhileMoving(times, callback) {
+        if (shouldStopExecution) return;
+        
+        for (let i = 0; i < times; i++) {
+            if (shouldStopExecution) break;
+            
+            // Execute callback
+            await callback();
+            
+            // Move forward a bit
+            await this.moveForward(1);
+        }
     }
 };
 
@@ -1038,6 +1346,8 @@ async function executeBlocklyProgram() {
         const executeCode = new Function(
             'moveForward', 'moveBackward', 'rotateLeft', 'rotateRight',
             'toggleHatch', 'transformRobot', 'wait',
+            'jumpRobot', 'toggleLights', 'toggleFly',
+            'executeWhileMoving', 'repeatWhileMoving',
             `return (async function() {\n${code}\n})();`
         );
         
@@ -1048,7 +1358,12 @@ async function executeBlocklyProgram() {
             programAPI.rotateRight.bind(programAPI),
             programAPI.toggleHatch.bind(programAPI),
             programAPI.transformRobot.bind(programAPI),
-            programAPI.wait.bind(programAPI)
+            programAPI.wait.bind(programAPI),
+            programAPI.jumpRobot.bind(programAPI),
+            programAPI.toggleLights.bind(programAPI),
+            programAPI.toggleFly.bind(programAPI),
+            programAPI.executeWhileMoving.bind(programAPI),
+            programAPI.repeatWhileMoving.bind(programAPI)
         );
         
         if (!shouldStopExecution) {
@@ -1241,5 +1556,35 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('✅ Workspace limpio!');
         }
         sideMenu.classList.remove('open');
+    });
+    
+    // Component system handlers
+    const componentJump = document.getElementById('componentJump');
+    const componentLights = document.getElementById('componentLights');
+    const componentFly = document.getElementById('componentFly');
+    
+    componentJump?.addEventListener('change', (e) => {
+        controller.components.jump = e.target.checked;
+        console.log('Component Saltar:', controller.components.jump ? 'Enabled' : 'Disabled');
+    });
+    
+    componentLights?.addEventListener('change', (e) => {
+        controller.components.lights = e.target.checked;
+        console.log('Component Luces:', controller.components.lights ? 'Enabled' : 'Disabled');
+        
+        // If disabling lights, turn them off
+        if (!e.target.checked && controller.lightsEnabled) {
+            controller.toggleLights();
+        }
+    });
+    
+    componentFly?.addEventListener('change', (e) => {
+        controller.components.fly = e.target.checked;
+        console.log('Component Volar:', controller.components.fly ? 'Enabled' : 'Disabled');
+        
+        // If disabling fly and robot is flying, land it
+        if (!e.target.checked && controller.isFlying) {
+            controller.toggleFly();
+        }
     });
 });
