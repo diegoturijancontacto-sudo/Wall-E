@@ -1018,6 +1018,20 @@ function initializeBlockly() {
         }
     };
     
+    // Event blocks
+    // Main program start block (hat block - no previous statement)
+    Blockly.Blocks['robot_when_start'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("🚀 Cuando se inicie el programa");
+            this.appendStatementInput("DO")
+                .appendField("hacer");
+            this.setColour(290);
+            this.setTooltip("Bloque de inicio del programa. Arrastra bloques aquí para ejecutarlos.");
+            // NO setPreviousStatement - this is a "hat" block that starts the program
+        }
+    };
+    
     // Event blocks (while-running events)
     Blockly.Blocks['robot_on_move'] = {
         init: function() {
@@ -1095,6 +1109,11 @@ function initializeBlockly() {
     };
     
     // Event code generators
+    Blockly.JavaScript['robot_when_start'] = function(block) {
+        const statements = Blockly.JavaScript.statementToCode(block, 'DO');
+        return statements; // Top-level block just returns its contents
+    };
+    
     Blockly.JavaScript['robot_on_move'] = function(block) {
         const statements = Blockly.JavaScript.statementToCode(block, 'DO');
         return `await executeWhileMoving(async () => {\n${statements}});\n`;
@@ -1105,6 +1124,14 @@ function initializeBlockly() {
         const statements = Blockly.JavaScript.statementToCode(block, 'DO');
         return `await repeatWhileMoving(${times}, async () => {\n${statements}});\n`;
     };
+    
+    // Register generators with forBlock for Blockly 12+ compatibility
+    // Copy all robot_* generators from the old API to the new API
+    Object.keys(Blockly.JavaScript).forEach(key => {
+        if (key.startsWith('robot_') && typeof Blockly.JavaScript[key] === 'function') {
+            Blockly.JavaScript.forBlock[key] = Blockly.JavaScript[key];
+        }
+    });
     
     // Create Blockly workspace
     blocklyWorkspace = Blockly.inject('blocklyDiv', {
@@ -1153,6 +1180,7 @@ function initializeBlockly() {
                     name: 'Eventos',
                     colour: '290',
                     contents: [
+                        { kind: 'block', type: 'robot_when_start' },
                         { kind: 'block', type: 'robot_on_move' },
                         { kind: 'block', type: 'robot_repeat_while_moving' },
                     ]
