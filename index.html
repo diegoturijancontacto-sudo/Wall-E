@@ -2,59 +2,392 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Wall-E Robot 3D</title>
     <style>
+        * {
+            box-sizing: border-box;
+        }
+        
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
+        
         #renderCanvas {
             width: 100%;
             height: 100vh;
             touch-action: none;
+            display: block;
         }
+        
+        /* Hamburger Menu Button */
+        #menuToggle {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 1000;
+            background: rgba(76, 175, 80, 0.9);
+            border: none;
+            border-radius: 8px;
+            padding: 12px 15px;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        #menuToggle:hover {
+            background: rgba(76, 175, 80, 1);
+            transform: scale(1.05);
+        }
+        
+        #menuToggle span {
+            display: block;
+            width: 25px;
+            height: 3px;
+            background: white;
+            margin: 5px 0;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+        
+        /* Side Menu */
+        #sideMenu {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 320px;
+            max-width: 90vw;
+            height: 100vh;
+            background: rgba(30, 30, 30, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 999;
+            transition: right 0.4s ease;
+            overflow-y: auto;
+            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        #sideMenu.open {
+            right: 0;
+        }
+        
+        .menu-content {
+            padding: 20px;
+            color: white;
+        }
+        
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(76, 175, 80, 0.5);
+        }
+        
+        .menu-header h2 {
+            margin: 0;
+            color: #4CAF50;
+            font-size: 1.5em;
+        }
+        
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .menu-section {
+            margin-bottom: 25px;
+        }
+        
+        .menu-section h3 {
+            color: #4CAF50;
+            margin: 0 0 10px 0;
+            font-size: 1.1em;
+        }
+        
+        .menu-button {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid rgba(76, 175, 80, 0.5);
+            border-radius: 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .menu-button:hover {
+            background: rgba(76, 175, 80, 0.4);
+            border-color: rgba(76, 175, 80, 0.8);
+        }
+        
+        .menu-button.active {
+            background: rgba(76, 175, 80, 0.6);
+            border-color: #4CAF50;
+        }
+        
         #controls {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            background: rgba(0, 0, 0, 0.75);
             color: white;
             padding: 15px;
             border-radius: 8px;
-            font-size: 14px;
-            max-width: 300px;
+            font-size: 13px;
+            max-width: 280px;
+            z-index: 10;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
+        
         #controls h3 {
             margin-top: 0;
+            margin-bottom: 10px;
             color: #4CAF50;
+            font-size: 1.1em;
         }
+        
         #controls p {
             margin: 5px 0;
+            line-height: 1.4;
         }
+        
         .key {
             background: rgba(76, 175, 80, 0.3);
             padding: 2px 6px;
             border-radius: 3px;
             font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        /* Blockly Workspace */
+        #blocklyDiv {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: none;
+            z-index: 500;
+        }
+        
+        #blocklyDiv.active {
+            display: block;
+        }
+        
+        /* Blockly Controls */
+        #blocklyControls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 501;
+            display: none;
+            gap: 10px;
+        }
+        
+        #blocklyControls.active {
+            display: flex;
+        }
+        
+        .blockly-btn {
+            padding: 12px 20px;
+            background: #4CAF50;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .blockly-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
+        }
+        
+        .blockly-btn:active {
+            transform: translateY(0);
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            #controls {
+                font-size: 11px;
+                padding: 10px;
+                max-width: 220px;
+                top: 10px;
+                left: 10px;
+            }
+            
+            #controls h3 {
+                font-size: 1em;
+                margin-bottom: 8px;
+            }
+            
+            #controls p {
+                margin: 3px 0;
+            }
+            
+            #menuToggle {
+                top: 10px;
+                right: 10px;
+                padding: 10px 12px;
+            }
+            
+            #menuToggle span {
+                width: 22px;
+            }
+            
+            .menu-button {
+                padding: 10px;
+                font-size: 13px;
+            }
+            
+            .blockly-btn {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #controls {
+                display: none;
+            }
+            
+            .menu-content {
+                padding: 15px;
+            }
+            
+            #blocklyControls {
+                flex-direction: column;
+                bottom: 10px;
+            }
+        }
+        
+        /* Loading indicator */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 1001;
+            display: none;
+        }
+        
+        .loading.show {
+            display: block;
         }
     </style>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
+    
+    <!-- Controls Info Panel -->
     <div id="controls">
-        <h3>🤖 Wall-E Robot Controls</h3>
-        <p><span class="key">W/A/S/D</span> - Mover el robot</p>
+        <h3>🤖 Wall-E Robot</h3>
+        <p><span class="key">W/A/S/D</span> - Mover</p>
         <p><span class="key">Q/E</span> - Rotar</p>
-        <p><span class="key">ESPACIO</span> - Abrir/Cerrar compuerta</p>
-        <p><span class="key">C</span> - Transformar a cubo</p>
-        <p><span class="key">Click + Arrastrar</span> - Rotar cámara</p>
-        <p style="margin-top: 10px; font-size: 12px;">🎮 Controles táctiles visibles en pantalla</p>
+        <p><span class="key">ESPACIO</span> - Compuerta</p>
+        <p><span class="key">C</span> - Transformar</p>
+        <p style="margin-top: 8px; font-size: 11px;">📱 Usa el menú para programar</p>
     </div>
+    
+    <!-- Hamburger Menu Button -->
+    <button id="menuToggle" aria-label="Toggle menu">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+    
+    <!-- Side Menu -->
+    <div id="sideMenu">
+        <div class="menu-content">
+            <div class="menu-header">
+                <h2>🤖 Menu</h2>
+                <button class="close-btn" id="closeMenu" aria-label="Close menu">×</button>
+            </div>
+            
+            <div class="menu-section">
+                <h3>📐 Vista</h3>
+                <button class="menu-button active" id="viewRobot">
+                    <span>🎮</span>
+                    <span>Control Manual</span>
+                </button>
+                <button class="menu-button" id="viewBlockly">
+                    <span>🧩</span>
+                    <span>Editor Blockly</span>
+                </button>
+            </div>
+            
+            <div class="menu-section">
+                <h3>💾 Programas</h3>
+                <button class="menu-button" id="saveProgram">
+                    <span>💾</span>
+                    <span>Guardar Programa</span>
+                </button>
+                <button class="menu-button" id="loadProgram">
+                    <span>📂</span>
+                    <span>Cargar Programa</span>
+                </button>
+                <button class="menu-button" id="clearProgram">
+                    <span>🗑️</span>
+                    <span>Limpiar Workspace</span>
+                </button>
+            </div>
+            
+            <div class="menu-section">
+                <h3>ℹ️ Información</h3>
+                <p style="font-size: 12px; line-height: 1.5; color: #ccc;">
+                    Usa Blockly para programar secuencias de movimientos del robot. 
+                    Arrastra bloques para crear tu programa y ejecuta para ver el resultado.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Blockly Workspace -->
+    <div id="blocklyDiv"></div>
+    
+    <!-- Blockly Controls -->
+    <div id="blocklyControls">
+        <button class="blockly-btn" id="runBlockly">▶️ Ejecutar</button>
+        <button class="blockly-btn" id="stopBlockly">⏹️ Detener</button>
+        <button class="blockly-btn" id="resetRobot">🔄 Reiniciar</button>
+    </div>
+    
+    <div class="loading" id="loading">Cargando...</div>
+    
     <script src="lib/babylon.js"></script>
     <script src="lib/babylonjs.materials.js"></script>
+    <script src="lib/blockly_compressed.js"></script>
+    <script src="lib/blocks_compressed.js"></script>
+    <script src="lib/javascript_compressed.js"></script>
+    <script src="lib/msg/es.js"></script>
     <script src="robot.js"></script>
 </body>
 </html>
