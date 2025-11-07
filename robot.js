@@ -297,6 +297,12 @@ class RobotController {
         this.cubeTransition = 0;
         this.walkCycle = 0; // For leg animation
         
+        // Component configuration constants
+        this.JUMP_HEIGHT = 3;
+        this.JUMP_DURATION = 60;
+        this.FLY_HEIGHT = 5;
+        this.EVENT_MOVE_DISTANCE = 2;
+        
         // Component system (Unity Inspector style)
         this.components = {
             jump: false,
@@ -742,8 +748,8 @@ class RobotController {
         
         this.isJumping = true;
         const startY = this.robot.position.y;
-        const jumpHeight = 3;
-        const jumpDuration = 60;
+        const jumpHeight = this.JUMP_HEIGHT;
+        const jumpDuration = this.JUMP_DURATION;
         
         const jumpAnim = new BABYLON.Animation(
             "jumpAnimation",
@@ -822,7 +828,7 @@ class RobotController {
         this.isFlying = !this.isFlying;
         
         if (this.isFlying) {
-            this.flyHeight = 5;
+            this.flyHeight = this.FLY_HEIGHT;
             const flyAnim = new BABYLON.Animation(
                 "flyAnimation",
                 "position.y",
@@ -1303,7 +1309,7 @@ const programAPI = {
         if (shouldStopExecution) return;
         
         // Start moving forward
-        const movePromise = this.moveForward(2);
+        const movePromise = this.moveForward(controller.EVENT_MOVE_DISTANCE);
         
         // Execute callback while moving
         const callbackPromise = callback();
