@@ -11,11 +11,33 @@
             box-sizing: border-box;
         }
         
+        /* SVG Icon Styles */
+        .icon {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+            flex-shrink: 0;
+        }
+        
+        .icon-sm {
+            width: 14px;
+            height: 14px;
+        }
+        
+        .icon-lg {
+            width: 24px;
+            height: 24px;
+        }
+        
         body {
             margin: 0;
             padding: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
         
         #renderCanvas {
@@ -25,157 +47,273 @@
             display: block;
         }
         
-        /* Hamburger Menu Button */
+        /* Elastic Animation Keyframes */
+        @keyframes elasticScale {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.15); }
+            50% { transform: scale(0.95); }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes elasticSlideIn {
+            0% { transform: translateX(100%); }
+            50% { transform: translateX(-8%); }
+            70% { transform: translateX(4%); }
+            90% { transform: translateX(-2%); }
+            100% { transform: translateX(0); }
+        }
+        
+        @keyframes elasticSlideOut {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(100%); }
+        }
+        
+        @keyframes elasticFadeIn {
+            0% { opacity: 0; transform: scale(0.8); }
+            50% { transform: scale(1.05); }
+            70% { transform: scale(0.98); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes elasticPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            60% { transform: scale(1.1); }
+            80% { transform: scale(0.95); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        /* Hamburger Menu Button - Minimalist */
         #menuToggle {
             position: fixed;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
             z-index: 1000;
-            background: rgba(76, 175, 80, 0.9);
+            background: rgba(255, 255, 255, 0.95);
             border: none;
-            border-radius: 8px;
-            padding: 12px 15px;
+            border-radius: 12px;
+            padding: 12px;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
         #menuToggle:hover {
-            background: rgba(76, 175, 80, 1);
-            transform: scale(1.05);
+            background: rgba(255, 255, 255, 1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: elasticScale 0.5s ease;
         }
         
-        #menuToggle span {
-            display: block;
-            width: 25px;
-            height: 3px;
-            background: white;
-            margin: 5px 0;
-            border-radius: 2px;
-            transition: all 0.3s ease;
+        #menuToggle:active {
+            transform: scale(0.95);
         }
         
-        /* Side Menu */
+        #menuToggle svg {
+            width: 24px;
+            height: 24px;
+            color: #333;
+            transition: color 0.2s ease;
+        }
+        
+        #menuToggle:hover svg {
+            color: #4CAF50;
+        }
+        
+        /* Side Menu - Minimalist */
         #sideMenu {
             position: fixed;
             top: 0;
-            right: -350px;
-            width: 320px;
-            max-width: 90vw;
+            right: 0;
+            width: 300px;
+            max-width: 85vw;
             height: 100vh;
-            background: rgba(30, 30, 30, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
             z-index: 999;
-            transition: right 0.4s ease;
             overflow-y: auto;
-            box-shadow: -4px 0 15px rgba(0, 0, 0, 0.5);
+            box-shadow: -4px 0 30px rgba(0, 0, 0, 0.1);
+            transform: translateX(100%);
+            transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
         
         #sideMenu.open {
-            right: 0;
+            transform: translateX(0);
+            animation: elasticSlideIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
         }
         
         .menu-content {
-            padding: 20px;
-            color: white;
+            padding: 24px;
+            color: #333;
         }
         
         .menu-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid rgba(76, 175, 80, 0.5);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         }
         
         .menu-header h2 {
             margin: 0;
+            color: #333;
+            font-size: 1.25em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .menu-header h2 svg {
+            width: 24px;
+            height: 24px;
             color: #4CAF50;
-            font-size: 1.5em;
         }
         
         .close-btn {
             background: transparent;
             border: none;
-            color: white;
-            font-size: 28px;
+            color: #666;
             cursor: pointer;
-            padding: 0;
-            width: 30px;
-            height: 30px;
+            padding: 8px;
+            border-radius: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .close-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: #333;
+            animation: elasticScale 0.4s ease;
+        }
+        
+        .close-btn svg {
+            width: 20px;
+            height: 20px;
         }
         
         .menu-section {
-            margin-bottom: 25px;
+            margin-bottom: 24px;
         }
         
         .menu-section h3 {
-            color: #4CAF50;
-            margin: 0 0 10px 0;
-            font-size: 1.1em;
+            color: #666;
+            margin: 0 0 12px 0;
+            font-size: 0.75em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .menu-section h3 svg {
+            width: 14px;
+            height: 14px;
         }
         
         .menu-button {
             width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            background: rgba(76, 175, 80, 0.2);
-            border: 2px solid rgba(76, 175, 80, 0.5);
-            border-radius: 8px;
-            color: white;
+            padding: 12px 14px;
+            margin: 6px 0;
+            background: rgba(0, 0, 0, 0.03);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            color: #333;
             cursor: pointer;
             font-size: 14px;
-            transition: all 0.3s ease;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             display: flex;
             align-items: center;
             gap: 10px;
         }
         
+        .menu-button svg {
+            width: 18px;
+            height: 18px;
+            color: #666;
+            transition: color 0.2s ease;
+        }
+        
         .menu-button:hover {
-            background: rgba(76, 175, 80, 0.4);
-            border-color: rgba(76, 175, 80, 0.8);
+            background: rgba(76, 175, 80, 0.1);
+            border-color: rgba(76, 175, 80, 0.3);
+            transform: translateX(4px);
+        }
+        
+        .menu-button:hover svg {
+            color: #4CAF50;
+        }
+        
+        .menu-button:active {
+            transform: scale(0.98) translateX(4px);
         }
         
         .menu-button.active {
-            background: rgba(76, 175, 80, 0.6);
-            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.15);
+            border-color: rgba(76, 175, 80, 0.4);
+            color: #2E7D32;
         }
         
+        .menu-button.active svg {
+            color: #4CAF50;
+        }
+        
+        /* Controls Info Panel - Minimalist */
         #controls {
             position: fixed;
-            top: 15px;
-            left: 15px;
-            background: rgba(0, 0, 0, 0.75);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            color: #333;
+            padding: 16px;
+            border-radius: 12px;
             font-size: 13px;
-            max-width: 280px;
+            max-width: 240px;
             z-index: 10;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.08);
+            animation: elasticFadeIn 0.5s ease;
         }
         
         #controls h3 {
             margin-top: 0;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            color: #333;
+            font-size: 1em;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #controls h3 svg {
+            width: 20px;
+            height: 20px;
             color: #4CAF50;
-            font-size: 1.1em;
         }
         
         #controls p {
-            margin: 5px 0;
+            margin: 6px 0;
             line-height: 1.4;
+            color: #555;
         }
         
         .key {
-            background: rgba(76, 175, 80, 0.3);
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-weight: bold;
+            background: #4CAF50;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 11px;
             white-space: nowrap;
         }
         
@@ -192,77 +330,96 @@
         
         #blocklyDiv.active {
             display: block;
+            animation: elasticFadeIn 0.4s ease;
         }
         
-        /* Blockly Controls */
+        /* Blockly Controls - Minimalist */
         #blocklyControls {
             position: fixed;
-            bottom: 20px;
+            bottom: 24px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 501;
             display: none;
-            gap: 10px;
+            gap: 8px;
         }
         
         #blocklyControls.active {
             display: flex;
+            animation: elasticPop 0.4s ease;
         }
         
         .blockly-btn {
             padding: 12px 20px;
-            background: #4CAF50;
-            border: none;
-            border-radius: 8px;
-            color: white;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            color: #333;
             font-size: 14px;
-            font-weight: bold;
+            font-weight: 500;
             cursor: pointer;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s ease;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .blockly-btn svg {
+            width: 18px;
+            height: 18px;
         }
         
         .blockly-btn:hover {
-            background: #45a049;
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+            box-shadow: 0 4px 20px rgba(76, 175, 80, 0.3);
             transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.4);
         }
         
         .blockly-btn:active {
-            transform: translateY(0);
+            transform: translateY(0) scale(0.98);
+        }
+        
+        .blockly-btn.stop-btn:hover {
+            background: #f44336;
+            border-color: #f44336;
+            box-shadow: 0 4px 20px rgba(244, 67, 54, 0.3);
         }
         
         /* Mobile Responsive */
         @media (max-width: 768px) {
             #controls {
-                font-size: 11px;
-                padding: 10px;
-                max-width: 220px;
-                top: 10px;
-                left: 10px;
+                font-size: 12px;
+                padding: 12px;
+                max-width: 200px;
+                top: 16px;
+                left: 16px;
             }
             
             #controls h3 {
-                font-size: 1em;
+                font-size: 0.9em;
                 margin-bottom: 8px;
             }
             
             #controls p {
-                margin: 3px 0;
+                margin: 4px 0;
             }
             
             #menuToggle {
-                top: 10px;
-                right: 10px;
-                padding: 10px 12px;
+                top: 16px;
+                right: 16px;
+                padding: 10px;
             }
             
-            #menuToggle span {
-                width: 22px;
+            #menuToggle svg {
+                width: 20px;
+                height: 20px;
             }
             
             .menu-button {
-                padding: 10px;
+                padding: 10px 12px;
                 font-size: 13px;
             }
             
@@ -278,38 +435,65 @@
             }
             
             .menu-content {
-                padding: 15px;
+                padding: 16px;
             }
             
             #blocklyControls {
                 flex-direction: column;
-                bottom: 10px;
+                bottom: 16px;
             }
         }
         
-        /* Loading indicator */
+        /* Loading indicator - Minimalist */
         .loading {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            color: white;
-            font-size: 18px;
+            color: #333;
+            font-size: 16px;
             z-index: 1001;
             display: none;
+            background: white;
+            padding: 20px 32px;
+            border-radius: 12px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.15);
         }
         
         .loading.show {
-            display: block;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: elasticPop 0.4s ease;
         }
         
-        /* Component Inspector Styles */
+        .loading svg {
+            width: 20px;
+            height: 20px;
+            color: #4CAF50;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading svg {
+            animation: spin 1s linear infinite;
+        }
+        
+        /* Component Inspector Styles - Minimalist */
         .component-item {
-            background: rgba(50, 50, 50, 0.5);
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid rgba(76, 175, 80, 0.3);
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 10px;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .component-item:hover {
+            background: rgba(0, 0, 0, 0.04);
         }
         
         .component-toggle {
@@ -320,8 +504,8 @@
         }
         
         .component-toggle input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             margin-right: 10px;
             cursor: pointer;
             accent-color: #4CAF50;
@@ -336,23 +520,35 @@
         }
         
         .component-icon {
-            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .component-icon svg {
+            width: 18px;
+            height: 18px;
+            color: #666;
         }
         
         .component-name {
-            color: white;
+            color: #333;
         }
         
         .component-desc {
-            margin: 5px 0 0 30px;
+            margin: 6px 0 0 28px;
             font-size: 11px;
-            color: #999;
-            line-height: 1.3;
+            color: #888;
+            line-height: 1.4;
         }
         
         .component-item:has(input:checked) {
-            border-color: #4CAF50;
-            background: rgba(76, 175, 80, 0.15);
+            border-color: rgba(76, 175, 80, 0.4);
+            background: rgba(76, 175, 80, 0.08);
+        }
+        
+        .component-item:has(input:checked) .component-icon svg {
+            color: #4CAF50;
         }
     </style>
 </head>
@@ -361,59 +557,61 @@
     
     <!-- Controls Info Panel -->
     <div id="controls">
-        <h3>🤖 Wall-E Robot</h3>
-        <p><span class="key">W/A/S/D</span> - Mover</p>
-        <p><span class="key">Q/E</span> - Rotar</p>
-        <p><span class="key">ESPACIO</span> - Compuerta</p>
-        <p><span class="key">C</span> - Transformar</p>
-        <p style="margin-top: 8px; font-size: 11px;">📱 Usa el menú para programar</p>
+        <h3><svg class="icon icon-lg" viewBox="0 0 24 24"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" x2="8" y1="16" y2="16"/><line x1="16" x2="16" y1="16" y2="16"/></svg> Wall-E Robot</h3>
+        <p><span class="key">W/A/S/D</span> Mover</p>
+        <p><span class="key">Q/E</span> Rotar</p>
+        <p><span class="key">ESPACIO</span> Compuerta</p>
+        <p><span class="key">C</span> Transformar</p>
+        <p style="margin-top: 8px; font-size: 11px; color: #888; display: flex; align-items: center; gap: 4px;">
+            <svg class="icon icon-sm" viewBox="0 0 24 24"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg> Usa el menú para programar
+        </p>
     </div>
     
     <!-- Hamburger Menu Button -->
     <button id="menuToggle" aria-label="Toggle menu">
-        <span></span>
-        <span></span>
-        <span></span>
+        <svg class="icon icon-lg" viewBox="0 0 24 24"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
     </button>
     
     <!-- Side Menu -->
     <div id="sideMenu">
         <div class="menu-content">
             <div class="menu-header">
-                <h2>🤖 Menu</h2>
-                <button class="close-btn" id="closeMenu" aria-label="Close menu">×</button>
+                <h2><svg class="icon icon-lg" viewBox="0 0 24 24"><rect width="18" height="10" x="3" y="11" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" x2="8" y1="16" y2="16"/><line x1="16" x2="16" y1="16" y2="16"/></svg> Menu</h2>
+                <button class="close-btn" id="closeMenu" aria-label="Close menu">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
             </div>
             
             <div class="menu-section">
-                <h3>📐 Vista</h3>
+                <h3><svg class="icon icon-sm" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> Vista</h3>
                 <button class="menu-button active" id="viewRobot">
-                    <span>🎮</span>
+                    <svg class="icon" viewBox="0 0 24 24"><line x1="6" x2="10" y1="11" y2="11"/><line x1="8" x2="8" y1="9" y2="13"/><line x1="15" x2="15.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="10" y2="10"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/></svg>
                     <span>Control Manual</span>
                 </button>
                 <button class="menu-button" id="viewBlockly">
-                    <span>🧩</span>
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19.439 7.85c-.049.322.059.648.289.878l1.568 1.568c.47.47.706 1.087.706 1.704s-.235 1.233-.706 1.704l-1.611 1.611a.98.98 0 0 1-.837.276c-.47-.07-.802-.48-.968-.925a2.501 2.501 0 1 0-3.214 3.214c.446.166.855.497.925.968a.979.979 0 0 1-.276.837l-1.61 1.61a2.404 2.404 0 0 1-1.705.707 2.402 2.402 0 0 1-1.704-.706l-1.568-1.568a1.026 1.026 0 0 0-.877-.29c-.493.074-.84.504-1.02.968a2.5 2.5 0 1 1-3.237-3.237c.464-.18.894-.527.967-1.02a1.026 1.026 0 0 0-.289-.877l-1.568-1.568A2.402 2.402 0 0 1 1.998 12c0-.617.236-1.234.706-1.704L4.23 8.77c.24-.24.581-.353.917-.303.515.077.877.528 1.073 1.01a2.5 2.5 0 1 0 3.259-3.259c-.482-.196-.933-.558-1.01-1.073-.05-.336.062-.676.303-.917l1.525-1.525A2.402 2.402 0 0 1 12 1.998c.617 0 1.234.236 1.704.706l1.568 1.568c.23.23.556.338.877.29.493-.074.84-.504 1.02-.968a2.5 2.5 0 1 1 3.237 3.237c-.464.18-.894.527-.967 1.02Z"/></svg>
                     <span>Editor Blockly</span>
                 </button>
             </div>
             
             <div class="menu-section">
-                <h3>💾 Programas</h3>
+                <h3><svg class="icon icon-sm" viewBox="0 0 24 24"><line x1="22" x2="2" y1="12" y2="12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" x2="6.01" y1="16" y2="16"/><line x1="10" x2="10.01" y1="16" y2="16"/></svg> Programas</h3>
                 <button class="menu-button" id="saveProgram">
-                    <span>💾</span>
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
                     <span>Guardar Programa</span>
                 </button>
                 <button class="menu-button" id="loadProgram">
-                    <span>📂</span>
+                    <svg class="icon" viewBox="0 0 24 24"><path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/></svg>
                     <span>Cargar Programa</span>
                 </button>
                 <button class="menu-button" id="clearProgram">
-                    <span>🗑️</span>
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
                     <span>Limpiar Workspace</span>
                 </button>
             </div>
             
             <div class="menu-section">
-                <h3>🔧 Inspector de Componentes</h3>
+                <h3><svg class="icon icon-sm" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Inspector de Componentes</h3>
                 <p style="font-size: 11px; color: #888; margin-bottom: 10px;">
                     Añade componentes al robot para habilitar funciones adicionales
                 </p>
@@ -421,7 +619,7 @@
                     <label class="component-toggle">
                         <input type="checkbox" id="componentJump">
                         <span class="component-label">
-                            <span class="component-icon">🦘</span>
+                            <span class="component-icon"><svg class="icon" viewBox="0 0 24 24"><path d="m18 9-6-6-6 6"/><path d="M12 3v14"/><path d="M5 21h14"/></svg></span>
                             <span class="component-name">Saltar</span>
                         </span>
                     </label>
@@ -431,7 +629,7 @@
                     <label class="component-toggle">
                         <input type="checkbox" id="componentLights">
                         <span class="component-label">
-                            <span class="component-icon">💡</span>
+                            <span class="component-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
                             <span class="component-name">Luces</span>
                         </span>
                     </label>
@@ -441,7 +639,7 @@
                     <label class="component-toggle">
                         <input type="checkbox" id="componentFly">
                         <span class="component-label">
-                            <span class="component-icon">✈️</span>
+                            <span class="component-icon"><svg class="icon" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z"/></svg></span>
                             <span class="component-name">Volar</span>
                         </span>
                     </label>
@@ -450,8 +648,8 @@
             </div>
             
             <div class="menu-section">
-                <h3>ℹ️ Información</h3>
-                <p style="font-size: 12px; line-height: 1.5; color: #ccc;">
+                <h3><svg class="icon icon-sm" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg> Información</h3>
+                <p style="font-size: 12px; line-height: 1.5; color: #888;">
                     Usa Blockly para programar secuencias de movimientos del robot. 
                     Arrastra bloques para crear tu programa y ejecuta para ver el resultado.
                 </p>
@@ -464,12 +662,12 @@
     
     <!-- Blockly Controls -->
     <div id="blocklyControls">
-        <button class="blockly-btn" id="runBlockly">▶️ Ejecutar</button>
-        <button class="blockly-btn" id="stopBlockly">⏹️ Detener</button>
-        <button class="blockly-btn" id="resetRobot">🔄 Reiniciar</button>
+        <button class="blockly-btn" id="runBlockly"><svg class="icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg> Ejecutar</button>
+        <button class="blockly-btn stop-btn" id="stopBlockly"><svg class="icon" viewBox="0 0 24 24"><rect width="14" height="14" x="5" y="5" rx="2"/></svg> Detener</button>
+        <button class="blockly-btn" id="resetRobot"><svg class="icon" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg> Reiniciar</button>
     </div>
     
-    <div class="loading" id="loading">Cargando...</div>
+    <div class="loading" id="loading"><svg class="icon" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Cargando...</div>
     
     <script src="lib/babylon.js"></script>
     <script src="lib/babylonjs.materials.js"></script>
