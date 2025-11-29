@@ -352,12 +352,14 @@ class RobotController {
         const touchContainer = document.createElement('div');
         touchContainer.id = 'touchControls';
         touchContainer.style.cssText = `
-            position: absolute;
+            position: fixed;
             bottom: 20px;
-            width: 100%;
+            left: 0;
+            right: 0;
+            height: 200px;
             display: block;
             pointer-events: none;
-            z-index: 1000;
+            z-index: 100;
         `;
         
         // Movement controls (left side)
@@ -366,15 +368,17 @@ class RobotController {
             position: absolute;
             left: 20px;
             bottom: 0;
+            width: 195px;
+            height: 195px;
             pointer-events: auto;
         `;
         
-        const createTouchButton = (label, top, left, size = 60) => {
+        const createTouchButton = (label, bottom, left, size = 60) => {
             const btn = document.createElement('button');
             btn.textContent = label;
             btn.style.cssText = `
                 position: absolute;
-                top: ${top}px;
+                bottom: ${bottom}px;
                 left: ${left}px;
                 width: ${size}px;
                 height: ${size}px;
@@ -404,8 +408,9 @@ class RobotController {
             return btn;
         };
         
-        const upBtn = createTouchButton('↑', 0, 65, 65);
-        const downBtn = createTouchButton('↓', 130, 65, 65);
+        // Position buttons using bottom (up button is at top, so highest bottom value)
+        const upBtn = createTouchButton('↑', 130, 65, 65);
+        const downBtn = createTouchButton('↓', 0, 65, 65);
         const leftBtn = createTouchButton('←', 65, 0, 65);
         const rightBtn = createTouchButton('→', 65, 130, 65);
         
@@ -420,31 +425,37 @@ class RobotController {
             position: absolute;
             right: 20px;
             bottom: 0;
+            width: 150px;
+            height: 100px;
             pointer-events: auto;
         `;
         
-        const rotLeftBtn = createTouchButton('⟲', 35, 0, 65);
-        const rotRightBtn = createTouchButton('⟳', 35, 85, 65);
+        // Position rotation buttons using bottom
+        const rotLeftBtn = createTouchButton('⟲', 0, 0, 65);
+        const rotRightBtn = createTouchButton('⟳', 0, 85, 65);
         
         rotationControls.appendChild(rotLeftBtn);
         rotationControls.appendChild(rotRightBtn);
         
-        // Action buttons (right side, middle)
+        // Action buttons (right side, above rotation controls)
         const actionControls = document.createElement('div');
         actionControls.style.cssText = `
             position: absolute;
             right: 20px;
-            bottom: 220px;
+            bottom: 110px;
+            width: 150px;
+            height: 65px;
             pointer-events: auto;
         `;
         
-        const hatchBtn = createTouchButton('🚪', 0, 42.5, 65);
-        hatchBtn.title = 'Abrir/Cerrar compuerta';
-        const cubeBtn = createTouchButton('◻', 80, 42.5, 65);
+        // Position action buttons side by side (cube on left, hatch on right)
+        const cubeBtn = createTouchButton('◻', 0, 0, 65);
         cubeBtn.title = 'Transformar a cubo';
+        const hatchBtn = createTouchButton('🚪', 0, 85, 65);
+        hatchBtn.title = 'Abrir/Cerrar compuerta';
         
-        actionControls.appendChild(hatchBtn);
         actionControls.appendChild(cubeBtn);
+        actionControls.appendChild(hatchBtn);
         
         touchContainer.appendChild(movementControls);
         touchContainer.appendChild(rotationControls);
