@@ -444,20 +444,18 @@ class RobotController {
             right: 20px;
             bottom: 110px;
             width: 150px;
-            height: 80px;
+            height: 65px;
             pointer-events: auto;
         `;
         
-        // Position action buttons using bottom values (hatch at bottom, cube above)
-        const hatchBtn = createTouchButton('🚪', 0, 42.5, 65);
-        hatchBtn.title = 'Abrir/Cerrar compuerta';
-        const cubeBtn = createTouchButton('◻', 0, 42.5, 65);
+        // Position action buttons side by side (cube on left, hatch on right)
+        const cubeBtn = createTouchButton('◻', 0, 0, 65);
         cubeBtn.title = 'Transformar a cubo';
-        // Adjust cube button position (place it to the left of hatch)
-        cubeBtn.style.left = '-30px';
+        const hatchBtn = createTouchButton('🚪', 0, 85, 65);
+        hatchBtn.title = 'Abrir/Cerrar compuerta';
         
-        actionControls.appendChild(hatchBtn);
         actionControls.appendChild(cubeBtn);
+        actionControls.appendChild(hatchBtn);
         
         touchContainer.appendChild(movementControls);
         touchContainer.appendChild(rotationControls);
