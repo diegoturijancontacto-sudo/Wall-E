@@ -938,7 +938,7 @@ function initializeBlockly() {
         init: function() {
             this.appendDummyInput()
                 .appendField("↶ Girar izquierda")
-                .appendField(new Blockly.FieldAngle(90), "ANGLE")
+                .appendField(new Blockly.FieldNumber(90, 0, 360, 1), "ANGLE")
                 .appendField("grados");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
@@ -951,12 +951,63 @@ function initializeBlockly() {
         init: function() {
             this.appendDummyInput()
                 .appendField("↷ Girar derecha")
-                .appendField(new Blockly.FieldAngle(90), "ANGLE")
+                .appendField(new Blockly.FieldNumber(90, 0, 360, 1), "ANGLE")
                 .appendField("grados");
             this.setPreviousStatement(true, null);
             this.setNextStatement(true, null);
             this.setColour(230);
             this.setTooltip("Gira el robot a la derecha");
+        }
+    };
+    
+    // Additional rotation blocks
+    Blockly.Blocks['robot_rotate_90_left'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("↶ Girar 90° izquierda");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(230);
+            this.setTooltip("Gira el robot 90 grados a la izquierda");
+        }
+    };
+    
+    Blockly.Blocks['robot_rotate_90_right'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("↷ Girar 90° derecha");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(230);
+            this.setTooltip("Gira el robot 90 grados a la derecha");
+        }
+    };
+    
+    Blockly.Blocks['robot_rotate_180'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("↻ Girar 180°");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(230);
+            this.setTooltip("Gira el robot 180 grados (media vuelta)");
+        }
+    };
+    
+    Blockly.Blocks['robot_face_direction'] = {
+        init: function() {
+            this.appendDummyInput()
+                .appendField("⟳ Mirar hacia")
+                .appendField(new Blockly.FieldDropdown([
+                    ["norte", "0"],
+                    ["este", "90"],
+                    ["sur", "180"],
+                    ["oeste", "270"]
+                ]), "DIRECTION");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(230);
+            this.setTooltip("Gira el robot para mirar hacia una dirección cardinal");
         }
     };
     
@@ -1093,6 +1144,24 @@ function initializeBlockly() {
         return `await rotateRight(${angle});\n`;
     };
     
+    // Additional rotation code generators
+    Blockly.JavaScript['robot_rotate_90_left'] = function(block) {
+        return `await rotateLeft(90);\n`;
+    };
+    
+    Blockly.JavaScript['robot_rotate_90_right'] = function(block) {
+        return `await rotateRight(90);\n`;
+    };
+    
+    Blockly.JavaScript['robot_rotate_180'] = function(block) {
+        return `await rotateLeft(180);\n`;
+    };
+    
+    Blockly.JavaScript['robot_face_direction'] = function(block) {
+        const direction = block.getFieldValue('DIRECTION');
+        return `await faceDirection(${direction});\n`;
+    };
+    
     Blockly.JavaScript['robot_toggle_hatch'] = function(block) {
         return `await toggleHatch();\n`;
     };
@@ -1165,6 +1234,10 @@ function initializeBlockly() {
                     contents: [
                         { kind: 'block', type: 'robot_rotate_left' },
                         { kind: 'block', type: 'robot_rotate_right' },
+                        { kind: 'block', type: 'robot_rotate_90_left' },
+                        { kind: 'block', type: 'robot_rotate_90_right' },
+                        { kind: 'block', type: 'robot_rotate_180' },
+                        { kind: 'block', type: 'robot_face_direction' },
                     ]
                 },
                 {
@@ -1295,6 +1368,28 @@ const programAPI = {
         await new Promise(resolve => setTimeout(resolve, 200));
     },
     
+    async faceDirection(targetAngle) {
+        if (shouldStopExecution) return;
+        // Convert target angle to radians
+        const targetRadians = targetAngle * Math.PI / 180;
+        // Get current rotation and normalize it
+        let currentAngle = robot.rotation.y % (2 * Math.PI);
+        if (currentAngle < 0) currentAngle += 2 * Math.PI;
+        
+        // Calculate the shortest rotation path
+        let diff = targetRadians - currentAngle;
+        if (diff > Math.PI) diff -= 2 * Math.PI;
+        if (diff < -Math.PI) diff += 2 * Math.PI;
+        
+        // Convert difference to degrees and rotate
+        const diffDegrees = Math.abs(diff * 180 / Math.PI);
+        if (diff > 0) {
+            await this.rotateLeft(diffDegrees);
+        } else {
+            await this.rotateRight(diffDegrees);
+        }
+    },
+    
     async toggleHatch() {
         if (shouldStopExecution) return;
         controller.toggleHatch();
@@ -1384,6 +1479,7 @@ async function executeBlocklyProgram() {
         // Create execution context with API
         const executeCode = new Function(
             'moveForward', 'moveBackward', 'rotateLeft', 'rotateRight',
+            'faceDirection',
             'toggleHatch', 'transformRobot', 'wait',
             'jumpRobot', 'toggleLights', 'toggleFly',
             'executeWhileMoving', 'repeatWhileMoving',
@@ -1395,6 +1491,7 @@ async function executeBlocklyProgram() {
             programAPI.moveBackward.bind(programAPI),
             programAPI.rotateLeft.bind(programAPI),
             programAPI.rotateRight.bind(programAPI),
+            programAPI.faceDirection.bind(programAPI),
             programAPI.toggleHatch.bind(programAPI),
             programAPI.transformRobot.bind(programAPI),
             programAPI.wait.bind(programAPI),
