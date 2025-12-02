@@ -4,10 +4,13 @@ Un sitio web interactivo con un robot estilo Wall-E en 3D creado con Babylon.js.
 
 ## Características
 
-🤖 **Robot Wall-E en 3D** - Modelo de robot completamente funcional creado con geometrías básicas (sin problemas de derechos de autor)
+🤖 **Robot Wall-E en 3D Mejorado** - Modelo de robot completamente funcional con detalles realistas
 - Diseño inspirado en Wall-E con ojos binoculares característicos
 - Orugas/tracks realistas para movimiento auténtico
-- Proporciones mejoradas para mayor semejanza con el personaje original
+- Panel solar en la parte superior del cuerpo
+- Detalles de desgaste y oxidación para mayor realismo
+- Pernos/tornillos decorativos en las esquinas
+- Texturas procedurales con efectos de envejecimiento
 
 🚜 **Sistema de Orugas** - El robot se mueve con tracks/orugas animadas como el Wall-E original
 
@@ -18,14 +21,19 @@ Un sitio web interactivo con un robot estilo Wall-E en 3D creado con Babylon.js.
 - **C** - Transformar el robot en un cubo compacto (¡y viceversa!)
 - **Click + Arrastrar** - Rotar la cámara alrededor del robot
 
-📱 **Controles Táctiles Mejorados** - Botones visibles en pantalla para todos los dispositivos:
-- Joystick virtual (↑↓←→) para movimiento en la esquina inferior izquierda
+📱 **Controles Táctiles con Joystick** - Sistema de control táctil completamente rediseñado:
+- 🕹️ **Joystick circular** en la esquina inferior izquierda para movimiento omnidireccional
+- Control analógico suave y responsivo
 - Botones de rotación (⟲⟳) en la esquina inferior derecha
 - Botones de acción (🚪 compuerta, ◻ transformación) en el lado derecho
 - Funciona con touch y mouse para máxima compatibilidad
 - Efectos visuales y animaciones al presionar
 
-🌍 **Escenario 3D** - Superficie con patrón de cuadrícula para facilitar la navegación
+🌅 **Entorno Realista:**
+- **Cielo con Skybox** - Gradiente azul realista con nubes procedurales
+- **Césped/Pasto** - Textura detallada de hierba con variaciones de color, parches y detalles
+- **Iluminación mejorada** - Luz hemisférica y direccional para mayor realismo
+- Todo generado proceduralmente sin archivos externos
 
 ## Cómo Usar
 
@@ -69,6 +77,23 @@ Wall-E/
 └── README.md         # Este archivo
 ```
 
-## Licencia
+## Recursos y Licencias
 
-Este proyecto utiliza geometrías básicas creadas programáticamente, sin modelos con derechos de autor.
+### Todos los Recursos son Libres de Derechos
+
+Este proyecto utiliza **exclusivamente recursos procedurales y libres de derechos**:
+
+1. **Modelo 3D del Robot**: Creado completamente con geometrías básicas de Babylon.js (cubos, cilindros, esferas)
+2. **Texturas**: Todas las texturas son generadas proceduralmente usando Canvas API:
+   - Textura de césped con variaciones de color y detalle
+   - Textura del cielo con gradiente y nubes
+   - Texturas de desgaste y oxidación del robot
+3. **Sin archivos externos**: No se utilizan modelos 3D, texturas o recursos de terceros
+4. **Licencia**: Este proyecto está disponible bajo la licencia MIT
+
+### Fuentes de las Bibliotecas
+
+- **Babylon.js** v8.33.2 - Motor de renderizado 3D WebGL (Apache License 2.0)
+- **Blockly** v12.3.1 - Editor de programación visual de Google (Apache License 2.0)
+
+Todas las bibliotecas utilizadas son de código abierto y gratuitas para uso comercial y no comercial.

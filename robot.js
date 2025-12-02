@@ -5,7 +5,52 @@ const engine = new BABYLON.Engine(canvas, true);
 // Create the scene
 const createScene = () => {
     const scene = new BABYLON.Scene(engine);
-    scene.clearColor = new BABYLON.Color3(0.5, 0.7, 0.9);
+    
+    // Create realistic procedural skybox (no external files needed)
+    const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
+    const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.disableLighting = true;
+    
+    // Create a gradient sky texture
+    const skyTexture = new BABYLON.DynamicTexture("skyTexture", 512, scene, true);
+    const skyCtx = skyTexture.getContext();
+    
+    // Create realistic sky gradient (horizon to zenith)
+    const gradient = skyCtx.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, "#1e5799");    // Deep blue at top
+    gradient.addColorStop(0.5, "#7db9e8");  // Light blue in middle
+    gradient.addColorStop(1, "#e8f4f8");    // Almost white at horizon
+    
+    skyCtx.fillStyle = gradient;
+    skyCtx.fillRect(0, 0, 512, 512);
+    
+    // Add some clouds (using arc for better browser compatibility)
+    skyCtx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 300 + 150;
+        const radius = Math.random() * 50 + 30;
+        
+        skyCtx.beginPath();
+        skyCtx.arc(x, y, radius, 0, Math.PI * 2);
+        skyCtx.fill();
+        
+        // Add additional circles for elongated cloud effect
+        skyCtx.beginPath();
+        skyCtx.arc(x + radius * 0.5, y, radius * 0.7, 0, Math.PI * 2);
+        skyCtx.fill();
+        skyCtx.beginPath();
+        skyCtx.arc(x - radius * 0.5, y, radius * 0.7, 0, Math.PI * 2);
+        skyCtx.fill();
+    }
+    
+    skyTexture.update();
+    
+    skyboxMaterial.emissiveTexture = skyTexture;
+    skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+    skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+    skybox.material = skyboxMaterial;
 
     // Camera
     const camera = new BABYLON.ArcRotateCamera(
@@ -20,35 +65,106 @@ const createScene = () => {
     camera.lowerRadiusLimit = 8;
     camera.upperRadiusLimit = 30;
 
-    // Lights
+    // Enhanced lighting for realistic look
     const light1 = new BABYLON.HemisphericLight(
         "light1",
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    light1.intensity = 0.7;
+    light1.intensity = 1.0;
+    light1.diffuse = new BABYLON.Color3(1, 1, 0.95);
+    light1.groundColor = new BABYLON.Color3(0.4, 0.6, 0.4);
 
     const light2 = new BABYLON.DirectionalLight(
         "light2",
         new BABYLON.Vector3(-1, -2, -1),
         scene
     );
-    light2.intensity = 0.5;
+    light2.intensity = 0.8;
+    light2.diffuse = new BABYLON.Color3(1, 0.95, 0.8);
 
-    // Ground with grid pattern
+    // Ground with grass texture
     const ground = BABYLON.MeshBuilder.CreateGround(
         "ground",
-        { width: 50, height: 50 },
+        { width: 50, height: 50, subdivisions: 10 },
         scene
     );
     
-    const gridMaterial = new BABYLON.GridMaterial("gridMat", scene);
-    gridMaterial.gridRatio = 2;
-    gridMaterial.majorUnitFrequency = 5;
-    gridMaterial.minorUnitVisibility = 0.3;
-    gridMaterial.mainColor = new BABYLON.Color3(0.3, 0.5, 0.3);
-    gridMaterial.lineColor = new BABYLON.Color3(0.2, 0.4, 0.2);
-    ground.material = gridMaterial;
+    const grassMaterial = new BABYLON.StandardMaterial("grassMat", scene);
+    
+    // Create realistic procedural grass texture (free, no external files)
+    const grassTexture = new BABYLON.DynamicTexture("grassTexture", 1024, scene, true);
+    const ctx = grassTexture.getContext();
+    
+    // Create multi-layered grass pattern
+    // Base layer - medium green grass
+    ctx.fillStyle = "#3a6b1f";
+    ctx.fillRect(0, 0, 1024, 1024);
+    
+    // Add grass patches with varying shades (heavily optimized for performance)
+    const grassColors = [
+        "#2d5016", "#3a6b1f", "#2a4d14", "#365e1b", "#28490f"
+    ];
+    
+    // Reduced to 1500 patches total for best performance on all devices
+    for (let i = 0; i < 1500; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const size = Math.random() * 5 + 2;
+        const colorIndex = Math.floor(Math.random() * grassColors.length);
+        
+        ctx.fillStyle = grassColors[colorIndex];
+        ctx.globalAlpha = 0.3 + Math.random() * 0.4;
+        
+        // Draw grass patches
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add individual grass blades for detail (heavily optimized)
+    ctx.globalAlpha = 0.6;
+    // Reduced to 1500 blades for optimal performance on all devices
+    for (let i = 0; i < 1500; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const height = Math.random() * 8 + 3; // Slightly taller to compensate for fewer blades
+        const brightness = Math.floor(Math.random() * 40) + 80;
+        
+        ctx.strokeStyle = `rgb(${brightness * 0.4}, ${brightness}, ${brightness * 0.3})`;
+        ctx.lineWidth = 0.8; // Slightly thicker for better visibility
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.random() * 2 - 1, y - height);
+        ctx.stroke();
+    }
+    
+    // Add some dirt spots for realism
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 100; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const size = Math.random() * 15 + 5;
+        
+        ctx.fillStyle = "#3d2817";
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.globalAlpha = 1.0;
+    grassTexture.update();
+    
+    grassMaterial.diffuseTexture = grassTexture;
+    grassMaterial.diffuseTexture.uScale = 15;
+    grassMaterial.diffuseTexture.vScale = 15;
+    grassMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.7, 0.3); // Ensure bright grass color
+    grassMaterial.specularColor = new BABYLON.Color3(0.15, 0.2, 0.15);
+    grassMaterial.ambientColor = new BABYLON.Color3(0.4, 0.6, 0.3);
+    grassMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.15, 0.08); // Add more glow for visibility
+    // Note: Removed bump texture to reduce memory usage (same texture was used for both diffuse and bump)
+    ground.material = grassMaterial;
+    ground.receiveShadows = true;
 
     // Create Wall-E style robot
     const robot = createRobot(scene);
@@ -73,7 +189,90 @@ const createRobot = (scene) => {
     bodyMaterial.diffuseColor = new BABYLON.Color3(0.85, 0.75, 0.25);
     bodyMaterial.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
     bodyMaterial.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.1);
+    
+    // Add weathering texture to body
+    const bodyTexture = new BABYLON.DynamicTexture("bodyTexture", 256, scene, true);
+    const bodyCtx = bodyTexture.getContext();
+    
+    // Base color
+    bodyCtx.fillStyle = "#d9c040";
+    bodyCtx.fillRect(0, 0, 256, 256);
+    
+    // Add rust spots
+    bodyCtx.globalAlpha = 0.3;
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const size = Math.random() * 10 + 3;
+        bodyCtx.fillStyle = "#8b4513";
+        bodyCtx.beginPath();
+        bodyCtx.arc(x, y, size, 0, Math.PI * 2);
+        bodyCtx.fill();
+    }
+    
+    // Add scratches
+    bodyCtx.globalAlpha = 0.4;
+    bodyCtx.strokeStyle = "#665522";
+    bodyCtx.lineWidth = 1;
+    for (let i = 0; i < 30; i++) {
+        bodyCtx.beginPath();
+        bodyCtx.moveTo(Math.random() * 256, Math.random() * 256);
+        bodyCtx.lineTo(Math.random() * 256, Math.random() * 256);
+        bodyCtx.stroke();
+    }
+    
+    bodyCtx.globalAlpha = 1.0;
+    bodyTexture.update();
+    
+    bodyMaterial.diffuseTexture = bodyTexture;
     body.material = bodyMaterial;
+    
+    // Add body details - solar panel on top
+    const solarPanel = BABYLON.MeshBuilder.CreateBox(
+        "solarPanel",
+        { width: 2.0, height: 0.1, depth: 1.4 },
+        scene
+    );
+    solarPanel.position = new BABYLON.Vector3(0, 0.95, 0);
+    solarPanel.parent = body;
+    const solarMaterial = new BABYLON.StandardMaterial("solarMat", scene);
+    solarMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.3);
+    solarMaterial.specularColor = new BABYLON.Color3(0.6, 0.6, 0.8);
+    solarPanel.material = solarMaterial;
+    
+    // Add rusty details on body - horizontal stripes
+    const bodyStripe = BABYLON.MeshBuilder.CreateBox(
+        "bodyStripe",
+        { width: 2.2, height: 0.2, depth: 1.61 },
+        scene
+    );
+    bodyStripe.position = new BABYLON.Vector3(0, 0, 0);
+    bodyStripe.parent = body;
+    const stripeMaterial = new BABYLON.StandardMaterial("stripeMat", scene);
+    stripeMaterial.diffuseColor = new BABYLON.Color3(0.6, 0.4, 0.1);
+    bodyStripe.material = stripeMaterial;
+    
+    // Add corner details - bolts/rivets
+    const createBolt = (x, y, z) => {
+        const bolt = BABYLON.MeshBuilder.CreateCylinder(
+            "bolt",
+            { height: 0.15, diameter: 0.15 },
+            scene
+        );
+        bolt.position = new BABYLON.Vector3(x, y, z);
+        bolt.parent = body;
+        const boltMaterial = new BABYLON.StandardMaterial("boltMat", scene);
+        boltMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        boltMaterial.specularColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+        bolt.material = boltMaterial;
+        return bolt;
+    };
+    
+    // Add bolts at corners for detail
+    createBolt(1.0, 0.8, 0.75);
+    createBolt(-1.0, 0.8, 0.75);
+    createBolt(1.0, -0.7, 0.75);
+    createBolt(-1.0, -0.7, 0.75);
 
     // Head/Eyes housing - more Wall-E style with binocular shape
     const head = BABYLON.MeshBuilder.CreateBox(
@@ -362,17 +561,187 @@ class RobotController {
             z-index: 100;
         `;
         
-        // Movement controls (left side)
-        const movementControls = document.createElement('div');
-        movementControls.style.cssText = `
+        // Create joystick for movement (left side)
+        const joystickContainer = document.createElement('div');
+        joystickContainer.style.cssText = `
             position: absolute;
-            left: 20px;
-            bottom: 0;
-            width: 195px;
-            height: 195px;
+            left: 30px;
+            bottom: 10px;
+            width: 150px;
+            height: 150px;
             pointer-events: auto;
         `;
         
+        // Joystick base (outer circle)
+        const joystickBase = document.createElement('div');
+        joystickBase.style.cssText = `
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 3px solid rgba(76, 175, 80, 0.8);
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        `;
+        
+        // Joystick stick (inner circle that moves)
+        const joystickStick = document.createElement('div');
+        joystickStick.style.cssText = `
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 70px;
+            height: 70px;
+            background: rgba(76, 175, 80, 0.8);
+            border: 3px solid rgba(76, 175, 80, 1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.1s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            cursor: grab;
+        `;
+        
+        joystickContainer.appendChild(joystickBase);
+        joystickContainer.appendChild(joystickStick);
+        
+        // Joystick state
+        let joystickActive = false;
+        let joystickCenterX = 75; // Half of container width
+        let joystickCenterY = 75; // Half of container height
+        const maxDistance = 40; // Maximum stick displacement from center
+        
+        const updateJoystick = (clientX, clientY) => {
+            const rect = joystickContainer.getBoundingClientRect();
+            const x = clientX - rect.left - joystickCenterX;
+            const y = clientY - rect.top - joystickCenterY;
+            
+            // Calculate distance and angle
+            const distance = Math.sqrt(x * x + y * y);
+            const angle = Math.atan2(y, x);
+            
+            // Limit distance to maxDistance
+            const limitedDistance = Math.min(distance, maxDistance);
+            const limitedX = limitedDistance * Math.cos(angle);
+            const limitedY = limitedDistance * Math.sin(angle);
+            
+            // Update stick position (maintain centering with calc)
+            joystickStick.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
+            
+            // Update touch controls based on angle and distance
+            const threshold = 15; // Minimum distance to trigger movement
+            if (limitedDistance > threshold) {
+                // Determine primary direction based on angle (no overlaps)
+                // Using 8-directional control with clear boundaries
+                const angleDeg = angle * 180 / Math.PI;
+                
+                // Reset all directions
+                this.touchControls.moveForward = false;
+                this.touchControls.moveBackward = false;
+                this.touchControls.moveLeft = false;
+                this.touchControls.moveRight = false;
+                
+                // Determine primary direction (mutually exclusive)
+                if (angleDeg >= -112.5 && angleDeg < -67.5) {
+                    // Up/Forward
+                    this.touchControls.moveForward = true;
+                } else if (angleDeg >= -67.5 && angleDeg < -22.5) {
+                    // Up-Right (diagonal)
+                    this.touchControls.moveForward = true;
+                    this.touchControls.moveRight = true;
+                } else if (angleDeg >= -22.5 && angleDeg < 22.5) {
+                    // Right
+                    this.touchControls.moveRight = true;
+                } else if (angleDeg >= 22.5 && angleDeg < 67.5) {
+                    // Down-Right (diagonal)
+                    this.touchControls.moveBackward = true;
+                    this.touchControls.moveRight = true;
+                } else if (angleDeg >= 67.5 && angleDeg < 112.5) {
+                    // Down/Backward
+                    this.touchControls.moveBackward = true;
+                } else if (angleDeg >= 112.5 && angleDeg < 157.5) {
+                    // Down-Left (diagonal)
+                    this.touchControls.moveBackward = true;
+                    this.touchControls.moveLeft = true;
+                } else if (angleDeg >= 157.5 || angleDeg < -157.5) {
+                    // Left
+                    this.touchControls.moveLeft = true;
+                } else if (angleDeg >= -157.5 && angleDeg < -112.5) {
+                    // Up-Left (diagonal)
+                    this.touchControls.moveForward = true;
+                    this.touchControls.moveLeft = true;
+                }
+            } else {
+                // Reset all directions when stick is centered
+                this.touchControls.moveForward = false;
+                this.touchControls.moveBackward = false;
+                this.touchControls.moveLeft = false;
+                this.touchControls.moveRight = false;
+            }
+        };
+        
+        const resetJoystick = () => {
+            joystickActive = false;
+            joystickStick.style.transform = 'translate(-50%, -50%)';
+            joystickStick.style.cursor = 'grab';
+            this.touchControls.moveForward = false;
+            this.touchControls.moveBackward = false;
+            this.touchControls.moveLeft = false;
+            this.touchControls.moveRight = false;
+        };
+        
+        // Touch events for joystick
+        joystickContainer.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            joystickActive = true;
+            joystickStick.style.cursor = 'grabbing';
+            const touch = e.touches[0];
+            updateJoystick(touch.clientX, touch.clientY);
+        });
+        
+        joystickContainer.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (joystickActive) {
+                const touch = e.touches[0];
+                updateJoystick(touch.clientX, touch.clientY);
+            }
+        });
+        
+        joystickContainer.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            resetJoystick();
+        });
+        
+        joystickContainer.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            resetJoystick();
+        });
+        
+        // Mouse events for desktop testing
+        // Note: These listeners are persistent and remain active for the page lifecycle
+        joystickContainer.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            joystickActive = true;
+            joystickStick.style.cursor = 'grabbing';
+            updateJoystick(e.clientX, e.clientY);
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (joystickActive) {
+                e.preventDefault();
+                updateJoystick(e.clientX, e.clientY);
+            }
+        });
+        
+        document.addEventListener('mouseup', (e) => {
+            if (joystickActive) {
+                e.preventDefault();
+                resetJoystick();
+            }
+        });
+        
+        // Create simple touch buttons for other actions
         const createTouchButton = (label, bottom, left, size = 60) => {
             const btn = document.createElement('button');
             btn.textContent = label;
@@ -395,7 +764,6 @@ class RobotController {
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
             `;
             
-            // Add hover effect
             btn.addEventListener('mouseenter', () => {
                 btn.style.background = 'rgba(76, 175, 80, 0.8)';
                 btn.style.transform = 'scale(1.05)';
@@ -407,17 +775,6 @@ class RobotController {
             
             return btn;
         };
-        
-        // Position buttons using bottom (up button is at top, so highest bottom value)
-        const upBtn = createTouchButton('↑', 130, 65, 65);
-        const downBtn = createTouchButton('↓', 0, 65, 65);
-        const leftBtn = createTouchButton('←', 65, 0, 65);
-        const rightBtn = createTouchButton('→', 65, 130, 65);
-        
-        movementControls.appendChild(upBtn);
-        movementControls.appendChild(downBtn);
-        movementControls.appendChild(leftBtn);
-        movementControls.appendChild(rightBtn);
         
         // Rotation controls (right side)
         const rotationControls = document.createElement('div');
@@ -457,7 +814,7 @@ class RobotController {
         actionControls.appendChild(cubeBtn);
         actionControls.appendChild(hatchBtn);
         
-        touchContainer.appendChild(movementControls);
+        touchContainer.appendChild(joystickContainer);
         touchContainer.appendChild(rotationControls);
         touchContainer.appendChild(actionControls);
         document.body.appendChild(touchContainer);
@@ -465,7 +822,7 @@ class RobotController {
         // Always show touch controls
         touchContainer.style.display = 'block';
         
-        // Touch and mouse event handlers
+        // Touch and mouse event handlers for rotation and action buttons
         const addTouchHandler = (btn, action) => {
             // Touch events
             btn.addEventListener('touchstart', (e) => {
@@ -504,10 +861,7 @@ class RobotController {
             btn.addEventListener('mouseleave', resetMouse);
         };
         
-        addTouchHandler(upBtn, 'moveForward');
-        addTouchHandler(downBtn, 'moveBackward');
-        addTouchHandler(leftBtn, 'moveLeft');
-        addTouchHandler(rightBtn, 'moveRight');
+        // Add touch handlers for rotation buttons
         addTouchHandler(rotLeftBtn, 'rotateLeft');
         addTouchHandler(rotRightBtn, 'rotateRight');
         
