@@ -25,16 +25,23 @@ const createScene = () => {
     skyCtx.fillStyle = gradient;
     skyCtx.fillRect(0, 0, 512, 512);
     
-    // Add some clouds
+    // Add some clouds (using arc for better browser compatibility)
     skyCtx.fillStyle = "rgba(255, 255, 255, 0.3)";
     for (let i = 0; i < 20; i++) {
         const x = Math.random() * 512;
         const y = Math.random() * 300 + 150;
-        const w = Math.random() * 100 + 50;
-        const h = Math.random() * 30 + 20;
+        const radius = Math.random() * 50 + 30;
         
         skyCtx.beginPath();
-        skyCtx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+        skyCtx.arc(x, y, radius, 0, Math.PI * 2);
+        skyCtx.fill();
+        
+        // Add additional circles for elongated cloud effect
+        skyCtx.beginPath();
+        skyCtx.arc(x + radius * 0.5, y, radius * 0.7, 0, Math.PI * 2);
+        skyCtx.fill();
+        skyCtx.beginPath();
+        skyCtx.arc(x - radius * 0.5, y, radius * 0.7, 0, Math.PI * 2);
         skyCtx.fill();
     }
     
@@ -94,40 +101,38 @@ const createScene = () => {
     ctx.fillStyle = "#3a6b1f";
     ctx.fillRect(0, 0, 1024, 1024);
     
-    // Add grass patches with varying shades (optimized for performance)
+    // Add grass patches with varying shades (heavily optimized for performance)
     const grassColors = [
         "#2d5016", "#3a6b1f", "#2a4d14", "#365e1b", "#28490f"
     ];
     
-    // Reduced to 2 layers with 2000 patches each for better performance
-    for (let layer = 0; layer < 2; layer++) {
-        for (let i = 0; i < 2000; i++) {
-            const x = Math.random() * 1024;
-            const y = Math.random() * 1024;
-            const size = Math.random() * 4 + 2;
-            const colorIndex = Math.floor(Math.random() * grassColors.length);
-            
-            ctx.fillStyle = grassColors[colorIndex];
-            ctx.globalAlpha = 0.3 + Math.random() * 0.4;
-            
-            // Draw grass patches
-            ctx.beginPath();
-            ctx.arc(x, y, size, 0, Math.PI * 2);
-            ctx.fill();
-        }
-    }
-    
-    // Add individual grass blades for detail (optimized count)
-    ctx.globalAlpha = 0.6;
-    // Reduced to 4000 blades for better performance while maintaining visual quality
-    for (let i = 0; i < 4000; i++) {
+    // Reduced to 1500 patches total for best performance on all devices
+    for (let i = 0; i < 1500; i++) {
         const x = Math.random() * 1024;
         const y = Math.random() * 1024;
-        const height = Math.random() * 6 + 2;
+        const size = Math.random() * 5 + 2;
+        const colorIndex = Math.floor(Math.random() * grassColors.length);
+        
+        ctx.fillStyle = grassColors[colorIndex];
+        ctx.globalAlpha = 0.3 + Math.random() * 0.4;
+        
+        // Draw grass patches
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    // Add individual grass blades for detail (heavily optimized)
+    ctx.globalAlpha = 0.6;
+    // Reduced to 1500 blades for optimal performance on all devices
+    for (let i = 0; i < 1500; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const height = Math.random() * 8 + 3; // Slightly taller to compensate for fewer blades
         const brightness = Math.floor(Math.random() * 40) + 80;
         
         ctx.strokeStyle = `rgb(${brightness * 0.4}, ${brightness}, ${brightness * 0.3})`;
-        ctx.lineWidth = 0.5;
+        ctx.lineWidth = 0.8; // Slightly thicker for better visibility
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x + Math.random() * 2 - 1, y - height);
@@ -715,6 +720,7 @@ class RobotController {
         });
         
         // Mouse events for desktop testing
+        // Note: These listeners are persistent and remain active for the page lifecycle
         joystickContainer.addEventListener('mousedown', (e) => {
             e.preventDefault();
             joystickActive = true;
