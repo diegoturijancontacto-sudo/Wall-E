@@ -6,30 +6,44 @@ const engine = new BABYLON.Engine(canvas, true);
 const createScene = () => {
     const scene = new BABYLON.Scene(engine);
     
-    // Create realistic skybox using free HDR environment
-    // Using a procedural sky for now (no external files needed)
+    // Create realistic procedural skybox (no external files needed)
     const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
     const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
     skyboxMaterial.backFaceCulling = false;
-    skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/environments/environmentSpecular.env", scene);
-    skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+    skyboxMaterial.disableLighting = true;
+    
+    // Create a gradient sky texture
+    const skyTexture = new BABYLON.DynamicTexture("skyTexture", 512, scene, true);
+    const skyCtx = skyTexture.getContext();
+    
+    // Create realistic sky gradient (horizon to zenith)
+    const gradient = skyCtx.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, "#1e5799");    // Deep blue at top
+    gradient.addColorStop(0.5, "#7db9e8");  // Light blue in middle
+    gradient.addColorStop(1, "#e8f4f8");    // Almost white at horizon
+    
+    skyCtx.fillStyle = gradient;
+    skyCtx.fillRect(0, 0, 512, 512);
+    
+    // Add some clouds
+    skyCtx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    for (let i = 0; i < 20; i++) {
+        const x = Math.random() * 512;
+        const y = Math.random() * 300 + 150;
+        const w = Math.random() * 100 + 50;
+        const h = Math.random() * 30 + 20;
+        
+        skyCtx.beginPath();
+        skyCtx.ellipse(x, y, w, h, 0, 0, Math.PI * 2);
+        skyCtx.fill();
+    }
+    
+    skyTexture.update();
+    
+    skyboxMaterial.emissiveTexture = skyTexture;
     skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
     skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
     skybox.material = skyboxMaterial;
-    
-    // Alternative: Create procedural sky if the texture doesn't load
-    try {
-        const sky = new BABYLON.SkyMaterial("skyMaterial", scene);
-        sky.backFaceCulling = false;
-        sky.turbidity = 5;
-        sky.luminance = 0.8;
-        sky.inclination = 0.3; // Sun inclination
-        sky.azimuth = 0.25; // Sun azimuth
-        sky.rayleigh = 2;
-        skybox.material = sky;
-    } catch (e) {
-        console.log("Sky material not available, using basic skybox");
-    }
 
     // Camera
     const camera = new BABYLON.ArcRotateCamera(
@@ -50,15 +64,17 @@ const createScene = () => {
         new BABYLON.Vector3(0, 1, 0),
         scene
     );
-    light1.intensity = 0.8;
-    light1.groundColor = new BABYLON.Color3(0.3, 0.5, 0.3);
+    light1.intensity = 1.0;
+    light1.diffuse = new BABYLON.Color3(1, 1, 0.95);
+    light1.groundColor = new BABYLON.Color3(0.4, 0.6, 0.4);
 
     const light2 = new BABYLON.DirectionalLight(
         "light2",
         new BABYLON.Vector3(-1, -2, -1),
         scene
     );
-    light2.intensity = 0.6;
+    light2.intensity = 0.8;
+    light2.diffuse = new BABYLON.Color3(1, 0.95, 0.8);
 
     // Ground with grass texture
     const ground = BABYLON.MeshBuilder.CreateGround(
@@ -69,30 +85,78 @@ const createScene = () => {
     
     const grassMaterial = new BABYLON.StandardMaterial("grassMat", scene);
     
-    // Create procedural grass texture (free, no external files)
-    const grassTexture = new BABYLON.DynamicTexture("grassTexture", 512, scene, true);
+    // Create realistic procedural grass texture (free, no external files)
+    const grassTexture = new BABYLON.DynamicTexture("grassTexture", 1024, scene, true);
     const ctx = grassTexture.getContext();
     
-    // Create grass-like pattern
-    ctx.fillStyle = "#2d5016"; // Dark grass base
-    ctx.fillRect(0, 0, 512, 512);
+    // Create multi-layered grass pattern
+    // Base layer - medium green grass
+    ctx.fillStyle = "#3a6b1f";
+    ctx.fillRect(0, 0, 1024, 1024);
     
-    // Add grass blade variations
-    for (let i = 0; i < 5000; i++) {
-        const x = Math.random() * 512;
-        const y = Math.random() * 512;
-        const shade = Math.floor(Math.random() * 50) + 50;
-        ctx.fillStyle = `rgb(${shade}, ${shade + 100}, ${shade})`;
-        ctx.fillRect(x, y, 2, 2);
+    // Add grass patches with varying shades
+    const grassColors = [
+        "#2d5016", "#3a6b1f", "#2a4d14", "#365e1b", "#28490f"
+    ];
+    
+    for (let layer = 0; layer < 3; layer++) {
+        for (let i = 0; i < 3000; i++) {
+            const x = Math.random() * 1024;
+            const y = Math.random() * 1024;
+            const size = Math.random() * 4 + 2;
+            const colorIndex = Math.floor(Math.random() * grassColors.length);
+            
+            ctx.fillStyle = grassColors[colorIndex];
+            ctx.globalAlpha = 0.3 + Math.random() * 0.4;
+            
+            // Draw grass patches
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
     }
     
+    // Add individual grass blades for detail
+    ctx.globalAlpha = 0.6;
+    for (let i = 0; i < 8000; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const height = Math.random() * 6 + 2;
+        const brightness = Math.floor(Math.random() * 40) + 80;
+        
+        ctx.strokeStyle = `rgb(${brightness * 0.4}, ${brightness}, ${brightness * 0.3})`;
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + Math.random() * 2 - 1, y - height);
+        ctx.stroke();
+    }
+    
+    // Add some dirt spots for realism
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 100; i++) {
+        const x = Math.random() * 1024;
+        const y = Math.random() * 1024;
+        const size = Math.random() * 15 + 5;
+        
+        ctx.fillStyle = "#3d2817";
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.globalAlpha = 1.0;
     grassTexture.update();
     
     grassMaterial.diffuseTexture = grassTexture;
-    grassMaterial.diffuseTexture.uScale = 10;
-    grassMaterial.diffuseTexture.vScale = 10;
-    grassMaterial.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-    grassMaterial.ambientColor = new BABYLON.Color3(0.2, 0.3, 0.1);
+    grassMaterial.diffuseTexture.uScale = 15;
+    grassMaterial.diffuseTexture.vScale = 15;
+    grassMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.7, 0.3); // Ensure bright grass color
+    grassMaterial.specularColor = new BABYLON.Color3(0.15, 0.2, 0.15);
+    grassMaterial.ambientColor = new BABYLON.Color3(0.4, 0.6, 0.3);
+    grassMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.15, 0.08); // Add more glow for visibility
+    grassMaterial.bumpTexture = grassTexture;
+    grassMaterial.bumpTexture.level = 0.2;
     ground.material = grassMaterial;
     ground.receiveShadows = true;
 
@@ -119,7 +183,42 @@ const createRobot = (scene) => {
     bodyMaterial.diffuseColor = new BABYLON.Color3(0.85, 0.75, 0.25);
     bodyMaterial.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
     bodyMaterial.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.1);
-    bodyMaterial.roughness = 0.6; // Add metallic look
+    
+    // Add weathering texture to body
+    const bodyTexture = new BABYLON.DynamicTexture("bodyTexture", 256, scene, true);
+    const bodyCtx = bodyTexture.getContext();
+    
+    // Base color
+    bodyCtx.fillStyle = "#d9c040";
+    bodyCtx.fillRect(0, 0, 256, 256);
+    
+    // Add rust spots
+    bodyCtx.globalAlpha = 0.3;
+    for (let i = 0; i < 50; i++) {
+        const x = Math.random() * 256;
+        const y = Math.random() * 256;
+        const size = Math.random() * 10 + 3;
+        bodyCtx.fillStyle = "#8b4513";
+        bodyCtx.beginPath();
+        bodyCtx.arc(x, y, size, 0, Math.PI * 2);
+        bodyCtx.fill();
+    }
+    
+    // Add scratches
+    bodyCtx.globalAlpha = 0.4;
+    bodyCtx.strokeStyle = "#665522";
+    bodyCtx.lineWidth = 1;
+    for (let i = 0; i < 30; i++) {
+        bodyCtx.beginPath();
+        bodyCtx.moveTo(Math.random() * 256, Math.random() * 256);
+        bodyCtx.lineTo(Math.random() * 256, Math.random() * 256);
+        bodyCtx.stroke();
+    }
+    
+    bodyCtx.globalAlpha = 1.0;
+    bodyTexture.update();
+    
+    bodyMaterial.diffuseTexture = bodyTexture;
     body.material = bodyMaterial;
     
     // Add body details - solar panel on top
@@ -135,7 +234,7 @@ const createRobot = (scene) => {
     solarMaterial.specularColor = new BABYLON.Color3(0.6, 0.6, 0.8);
     solarPanel.material = solarMaterial;
     
-    // Add rusty details on body
+    // Add rusty details on body - horizontal stripes
     const bodyStripe = BABYLON.MeshBuilder.CreateBox(
         "bodyStripe",
         { width: 2.2, height: 0.2, depth: 1.61 },
@@ -146,6 +245,28 @@ const createRobot = (scene) => {
     const stripeMaterial = new BABYLON.StandardMaterial("stripeMat", scene);
     stripeMaterial.diffuseColor = new BABYLON.Color3(0.6, 0.4, 0.1);
     bodyStripe.material = stripeMaterial;
+    
+    // Add corner details - bolts/rivets
+    const createBolt = (x, y, z) => {
+        const bolt = BABYLON.MeshBuilder.CreateCylinder(
+            "bolt",
+            { height: 0.15, diameter: 0.15 },
+            scene
+        );
+        bolt.position = new BABYLON.Vector3(x, y, z);
+        bolt.parent = body;
+        const boltMaterial = new BABYLON.StandardMaterial("boltMat", scene);
+        boltMaterial.diffuseColor = new BABYLON.Color3(0.3, 0.3, 0.3);
+        boltMaterial.specularColor = new BABYLON.Color3(0.6, 0.6, 0.6);
+        bolt.material = boltMaterial;
+        return bolt;
+    };
+    
+    // Add bolts at corners for detail
+    createBolt(1.0, 0.8, 0.75);
+    createBolt(-1.0, 0.8, 0.75);
+    createBolt(1.0, -0.7, 0.75);
+    createBolt(-1.0, -0.7, 0.75);
 
     // Head/Eyes housing - more Wall-E style with binocular shape
     const head = BABYLON.MeshBuilder.CreateBox(
