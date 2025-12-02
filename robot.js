@@ -162,8 +162,7 @@ const createScene = () => {
     grassMaterial.specularColor = new BABYLON.Color3(0.15, 0.2, 0.15);
     grassMaterial.ambientColor = new BABYLON.Color3(0.4, 0.6, 0.3);
     grassMaterial.emissiveColor = new BABYLON.Color3(0.1, 0.15, 0.08); // Add more glow for visibility
-    grassMaterial.bumpTexture = grassTexture;
-    grassMaterial.bumpTexture.level = 0.2;
+    // Note: Removed bump texture to reduce memory usage (same texture was used for both diffuse and bump)
     ground.material = grassMaterial;
     ground.receiveShadows = true;
 
@@ -627,8 +626,8 @@ class RobotController {
             const limitedX = limitedDistance * Math.cos(angle);
             const limitedY = limitedDistance * Math.sin(angle);
             
-            // Update stick position
-            joystickStick.style.transform = `translate(${limitedX}px, ${limitedY}px)`;
+            // Update stick position (maintain centering with calc)
+            joystickStick.style.transform = `translate(calc(-50% + ${limitedX}px), calc(-50% + ${limitedY}px))`;
             
             // Update touch controls based on angle and distance
             const threshold = 15; // Minimum distance to trigger movement
