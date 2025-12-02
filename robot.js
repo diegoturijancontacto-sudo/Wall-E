@@ -94,13 +94,14 @@ const createScene = () => {
     ctx.fillStyle = "#3a6b1f";
     ctx.fillRect(0, 0, 1024, 1024);
     
-    // Add grass patches with varying shades
+    // Add grass patches with varying shades (optimized for performance)
     const grassColors = [
         "#2d5016", "#3a6b1f", "#2a4d14", "#365e1b", "#28490f"
     ];
     
-    for (let layer = 0; layer < 3; layer++) {
-        for (let i = 0; i < 3000; i++) {
+    // Reduced to 2 layers with 2000 patches each for better performance
+    for (let layer = 0; layer < 2; layer++) {
+        for (let i = 0; i < 2000; i++) {
             const x = Math.random() * 1024;
             const y = Math.random() * 1024;
             const size = Math.random() * 4 + 2;
@@ -116,9 +117,10 @@ const createScene = () => {
         }
     }
     
-    // Add individual grass blades for detail
+    // Add individual grass blades for detail (optimized count)
     ctx.globalAlpha = 0.6;
-    for (let i = 0; i < 8000; i++) {
+    // Reduced to 4000 blades for better performance while maintaining visual quality
+    for (let i = 0; i < 4000; i++) {
         const x = Math.random() * 1024;
         const y = Math.random() * 1024;
         const height = Math.random() * 6 + 2;
@@ -626,20 +628,46 @@ class RobotController {
             // Update touch controls based on angle and distance
             const threshold = 15; // Minimum distance to trigger movement
             if (limitedDistance > threshold) {
-                const normalizedDistance = limitedDistance / maxDistance;
-                
-                // Determine direction based on angle
-                // Forward (up): -90° ± 45°
-                // Backward (down): 90° ± 45°
-                // Left: 180° or -180° ± 45°
-                // Right: 0° ± 45°
-                
+                // Determine primary direction based on angle (no overlaps)
+                // Using 8-directional control with clear boundaries
                 const angleDeg = angle * 180 / Math.PI;
                 
-                this.touchControls.moveForward = (angleDeg < -45 && angleDeg > -135);
-                this.touchControls.moveBackward = (angleDeg > 45 && angleDeg < 135);
-                this.touchControls.moveLeft = (angleDeg < -135 || angleDeg > 135);
-                this.touchControls.moveRight = (angleDeg > -45 && angleDeg < 45);
+                // Reset all directions
+                this.touchControls.moveForward = false;
+                this.touchControls.moveBackward = false;
+                this.touchControls.moveLeft = false;
+                this.touchControls.moveRight = false;
+                
+                // Determine primary direction (mutually exclusive)
+                if (angleDeg >= -112.5 && angleDeg < -67.5) {
+                    // Up/Forward
+                    this.touchControls.moveForward = true;
+                } else if (angleDeg >= -67.5 && angleDeg < -22.5) {
+                    // Up-Right (diagonal)
+                    this.touchControls.moveForward = true;
+                    this.touchControls.moveRight = true;
+                } else if (angleDeg >= -22.5 && angleDeg < 22.5) {
+                    // Right
+                    this.touchControls.moveRight = true;
+                } else if (angleDeg >= 22.5 && angleDeg < 67.5) {
+                    // Down-Right (diagonal)
+                    this.touchControls.moveBackward = true;
+                    this.touchControls.moveRight = true;
+                } else if (angleDeg >= 67.5 && angleDeg < 112.5) {
+                    // Down/Backward
+                    this.touchControls.moveBackward = true;
+                } else if (angleDeg >= 112.5 && angleDeg < 157.5) {
+                    // Down-Left (diagonal)
+                    this.touchControls.moveBackward = true;
+                    this.touchControls.moveLeft = true;
+                } else if (angleDeg >= 157.5 || angleDeg < -157.5) {
+                    // Left
+                    this.touchControls.moveLeft = true;
+                } else if (angleDeg >= -157.5 && angleDeg < -112.5) {
+                    // Up-Left (diagonal)
+                    this.touchControls.moveForward = true;
+                    this.touchControls.moveLeft = true;
+                }
             } else {
                 // Reset all directions when stick is centered
                 this.touchControls.moveForward = false;
