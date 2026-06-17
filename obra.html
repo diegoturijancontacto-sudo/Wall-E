@@ -41,6 +41,11 @@
     .animate-box-bounce { 
       animation: bounce-custom 1s infinite ease-in-out; 
     }
+    /* Scrollbar personalizada para el historial */
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 20px; }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb { background-color: #475569; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen">
@@ -53,7 +58,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbxmPBIboe_Evn45ZHjtkjydbmlPRMuSax_sEiTc2iN8cqqi2i4-Pf_lOd6875cQXEd_yg/exec";
 
     // --- COMPONENTES DE ICONOS (Inline SVG para máxima compatibilidad) ---
-    const IconBack = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
+    const IconBack = ({ className = "" }) => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>;
     const IconEdit = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>;
     const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
     const IconSave = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
@@ -61,6 +66,8 @@
     const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
     const IconPaperclip = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-8.49 8.49a5.5 5.5 0 0 1-7.78-7.78l8.48-8.49a3.5 3.5 0 1 1 4.95 4.95l-8.49 8.48a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>;
     const IconSettings = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
+    const IconUnseen = () => <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><line x1="4" y1="4" x2="20" y2="20"/></svg>;
+    const IconChevronRight = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400"><path d="m9 18 6-6-6-6"/></svg>;
 
     // --- COMPONENTE CARGADOR ---
     const BoxLoader = ({ message = "Cargando datos..." }) => (
@@ -87,43 +94,21 @@
     };
 
     const RECENT_OBRAS_KEY = "recentObras";
+    const VIEWED_OBRAS_KEY = "obraViewedHistory"; // Nuevo: Clave para el historial completo
     const UI_SETTINGS_KEY = "obraUiSettings";
     const MAX_RECENT = 3;
     const MEASURE_ROUND_FACTOR = 10000;
     
     const DEFAULT_UI_SETTINGS = { darkMode: false, rotateMeasures: true };
     const DEFAULT_OBRA = {
-      id: '',
-      nombre_obra: '',
-      ubicacion: '',
-      estatus: 'Consolidación',
-      tipo_obra: '',
-      superficie: '',
-      precio_lista: '',
-      precio_venta: '',
-      fecha_registro: '',
-      fecha_adquisicion: '',
-      fecha_venta: '',
-      cliente: '',
-      observaciones: '',
-      id_responsable: '',
-      autor: '',
-      asignacion: '',
-      provenance: '',
-      clave: 'Pendiente',
-      ancho: '',
-      alto: '',
-      largo: '',
-      tags: []
+      id: '', nombre_obra: '', ubicacion: '', estatus: 'Consolidación', tipo_obra: '', 
+      superficie: '', precio_lista: '', precio_venta: '', fecha_registro: '', fecha_adquisicion: '', 
+      fecha_venta: '', cliente: '', observaciones: '', id_responsable: '', autor: '', 
+      asignacion: '', provenance: '', clave: 'Pendiente', ancho: '', alto: '', largo: '', tags: []
     };
 
     function getRecentIds() {
-      try { 
-        return JSON.parse(localStorage.getItem(RECENT_OBRAS_KEY) || "[]"); 
-      } catch (e) { 
-        console.error("Error parsing recent obras from localStorage:", e); 
-        return []; 
-      }
+      try { return JSON.parse(localStorage.getItem(RECENT_OBRAS_KEY) || "[]"); } catch (e) { return []; }
     }
 
     function saveRecentId(id) {
@@ -133,15 +118,31 @@
       localStorage.setItem(RECENT_OBRAS_KEY, JSON.stringify(ids.slice(0, MAX_RECENT)));
     }
 
+    // Funciones del historial extendido
+    function getViewedHistory() {
+      try { return JSON.parse(localStorage.getItem(VIEWED_OBRAS_KEY) || "[]"); } catch (e) { return []; }
+    }
+
+    function addViewedHistory(id) {
+      if (!id) return;
+      let ids = getViewedHistory().filter(x => x !== id);
+      ids.unshift(id);
+      ids = ids.slice(0, 100); // Límite de 100 elementos en el historial
+      localStorage.setItem(VIEWED_OBRAS_KEY, JSON.stringify(ids));
+      return ids;
+    }
+
+    function clearViewedHistory() {
+      localStorage.removeItem(VIEWED_OBRAS_KEY);
+      return [];
+    }
+
     function getUiSettings() {
       try {
         const storedSettings = JSON.parse(localStorage.getItem(UI_SETTINGS_KEY) || "{}");
-        const rotateMeasures = typeof storedSettings.rotateMeasures === 'boolean'
-          ? storedSettings.rotateMeasures
-          : !!storedSettings.invertMeasures;
+        const rotateMeasures = typeof storedSettings.rotateMeasures === 'boolean' ? storedSettings.rotateMeasures : !!storedSettings.invertMeasures;
         return { ...DEFAULT_UI_SETTINGS, ...storedSettings, rotateMeasures };
       } catch (e) {
-        console.error("Error parsing UI settings:", e);
         return { ...DEFAULT_UI_SETTINGS };
       }
     }
@@ -165,6 +166,8 @@
       const [obras, setObras] = useState([]);
       const [comisiones, setComisiones] = useState([]);
       const [search, setSearch] = useState("");
+      
+      // Filtros
       const [filterStatus, setFilterStatus] = useState("");
       const [filterTipo, setFilterTipo] = useState("");
       const [filterProvenance, setFilterProvenance] = useState("");
@@ -172,10 +175,12 @@
       const [filterPriceMin, setFilterPriceMin] = useState("");
       const [filterPriceMax, setFilterPriceMax] = useState("");
       const [showFilters, setShowFilters] = useState(false);
+      
       const [currentObra, setCurrentObra] = useState(null);
       const [toast, setToast] = useState({ message: '', type: '' });
       const [saving, setSaving] = useState(false);
       const [recentIds, setRecentIds] = useState(() => getRecentIds());
+      const [viewedIds, setViewedIds] = useState(() => getViewedHistory()); // Estado de vistos
       const [uiSettings, setUiSettings] = useState(() => getUiSettings());
 
       useEffect(() => { 
@@ -191,6 +196,26 @@
         }
       }, [uiSettings]);
 
+      // Detectar cambios en la URL (Deep Linking a través del botón atrás del navegador)
+      useEffect(() => {
+        const handleHashChange = () => {
+          const hash = window.location.hash.substring(1);
+          if (!hash) {
+            setView("list");
+          } else if (obras.length > 0) {
+            const linkedObra = obras.find(o => o.clave === hash || o.id === hash);
+            if (linkedObra) {
+              setCurrentObra(linkedObra);
+              setView("detail");
+              const newViewed = addViewedHistory(linkedObra.id);
+              setViewedIds(newViewed);
+            }
+          }
+        };
+        window.addEventListener("hashchange", handleHashChange);
+        return () => window.removeEventListener("hashchange", handleHashChange);
+      }, [obras]);
+
       const fetchAllData = async () => {
         setLoading(true);
         try {
@@ -198,13 +223,26 @@
           if (!res.ok) throw new Error("Fallo en la red");
           const data = await res.json();
           if (data && data.registrosObra) {
-            setObras(data.registrosObra.map(o => ({
+            const fetchedObras = data.registrosObra.map(o => ({
               ...o,
               ancho: normalizeMeasureValue(o.ancho),
               alto: normalizeMeasureValue(o.alto),
               largo: normalizeMeasureValue(o.largo),
-            })));
+            }));
+            setObras(fetchedObras);
             setComisiones(data.comisiones || []);
+
+            // Enrutamiento inicial (Deep linking)
+            const hash = window.location.hash.substring(1);
+            const pathClave = window.location.pathname.split('/').pop();
+            const targetClave = hash || (pathClave && !pathClave.includes('.html') ? pathClave : null);
+
+            if (targetClave) {
+              const linkedObra = fetchedObras.find(o => o.clave === targetClave || o.id === targetClave);
+              if (linkedObra) {
+                openDetail(linkedObra, true);
+              }
+            }
           } else {
             showToast("La respuesta de la API no contiene el formato esperado.", "error");
           }
@@ -225,17 +263,34 @@
         }
       };
 
-      const openDetail = (obra) => {
+      const handleGoToList = () => {
+        setView("list");
+        // Limpiamos el hash de la URL para que no interfiera si se recarga
+        window.history.pushState("", document.title, window.location.pathname + window.location.search);
+      };
+
+      const openDetail = (obra, isInitialLoad = false) => {
         if (!obra) return;
         saveRecentId(obra.id);
         setRecentIds(getRecentIds());
+        
+        // Guardar en el historial general
+        const newViewed = addViewedHistory(obra.id);
+        setViewedIds(newViewed);
+
         setCurrentObra(obra);
         setView("detail");
+
+        // Actualizar la URL con hash (ej. #CLAVE) para permitir enviar el enlace
+        if (!isInitialLoad) {
+          window.location.hash = obra.clave || obra.id;
+        }
       };
 
       const handleCreateNewObra = () => {
         setCurrentObra({ ...DEFAULT_OBRA, id: Date.now().toString(), fecha_registro: new Date().toISOString().split('T')[0] });
         setView("form");
+        window.history.pushState("", document.title, window.location.pathname + window.location.search);
       };
 
       const handleCopyInfo = () => {
@@ -260,6 +315,7 @@ Responsable: ${currentObra.responsable_nombre || currentObra.id_responsable || '
 Provenance: ${prov}
 Tags: ${tagsAsText(currentObra.tags) || 'N/A'}
 Observaciones: ${currentObra.observaciones || 'Ninguna'}
+Enlace directo: ${window.location.origin}${window.location.pathname}#${currentObra.clave}
         `.trim();
 
         const textArea = document.createElement("textarea");
@@ -302,7 +358,7 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
           if (result && result.result === 'success') {
             showToast("Guardado correctamente");
             await fetchAllData();
-            setView("list");
+            handleGoToList();
           } else {
             showToast("El servidor no guardó con éxito: " + (result?.message || 'Error desconocido'), "error");
           }
@@ -356,6 +412,7 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
       });
 
       const recentObras = recentIds.map(id => obras.find(o => o.id === id)).filter(Boolean);
+      const historyObras = viewedIds.map(id => obras.find(o => o.id === id)).filter(Boolean);
 
       // --- RENDERIZADO DE VISTAS ---
 
@@ -453,32 +510,42 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
             
             {loading ? <BoxLoader message="Obteniendo registros de la nube..." /> : (
               <ul className="space-y-3">
-                {filtered.map(o => (
-                  <li 
-                    key={o.id} 
-                    onClick={() => openDetail(o)} 
-                    role="button" 
-                    tabIndex={0} 
-                    onKeyDown={(e) => activateOnKey(e, () => openDetail(o))} 
-                    className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 active:scale-95 hover:scale-[1.01] cursor-pointer transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-2 gap-3">
-                      <h3 className="font-bold text-slate-800 dark:text-slate-100 leading-tight">{o.nombre_obra}</h3>
-                      <span className="text-[10px] font-bold bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded uppercase tracking-wider shrink-0">{o.estatus}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <p className="text-slate-500 dark:text-slate-400 font-mono">#{o.clave || '-'}</p>
-                      {(() => {
-                        const hasAdjuntos = Array.isArray(o.adjuntos) && o.adjuntos.length > 0;
-                        return (
-                          <span className={hasAdjuntos ? "text-indigo-600 dark:text-indigo-400" : "text-slate-300 dark:text-slate-700"} title={hasAdjuntos ? "Con archivos adjuntos" : "Sin archivos adjuntos"}>
-                            <IconPaperclip />
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </li>
-                ))}
+                {filtered.map(o => {
+                  const isNew = !viewedIds.includes(o.id);
+                  return (
+                    <li 
+                      key={o.id} 
+                      onClick={() => openDetail(o)} 
+                      role="button" 
+                      tabIndex={0} 
+                      onKeyDown={(e) => activateOnKey(e, () => openDetail(o))} 
+                      className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 active:scale-95 hover:scale-[1.01] cursor-pointer transition-all"
+                    >
+                      <div className="flex justify-between items-start mb-2 gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 min-w-0">
+                          <h3 className="font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">{o.nombre_obra}</h3>
+                          {isNew && (
+                            <span className="inline-flex w-fit items-center gap-1 bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-wider shrink-0 shadow-sm" title="Nunca vista">
+                              <IconUnseen /> Nueva
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] font-bold bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded uppercase tracking-wider shrink-0">{o.estatus}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <p className="text-slate-500 dark:text-slate-400 font-mono">#{o.clave || '-'}</p>
+                        {(() => {
+                          const hasAdjuntos = Array.isArray(o.adjuntos) && o.adjuntos.length > 0;
+                          return (
+                            <span className={hasAdjuntos ? "text-indigo-600 dark:text-indigo-400" : "text-slate-300 dark:text-slate-700"} title={hasAdjuntos ? "Con archivos adjuntos" : "Sin archivos adjuntos"}>
+                              <IconPaperclip />
+                            </span>
+                          );
+                        })()}
+                      </div>
+                    </li>
+                  )
+                })}
               </ul>
             )}
             {!loading && filtered.length === 0 && (
@@ -503,11 +570,11 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
       if (view === "settings") return (
         <div className="min-h-screen">
           <nav className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-10 shadow-sm">
-            <button onClick={() => setView("list")} className="p-2 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><IconBack /></button>
+            <button onClick={handleGoToList} className="p-2 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><IconBack /></button>
             <h2 className="font-bold text-slate-800 dark:text-slate-100 truncate px-4">Configuración</h2>
             <div className="w-8"></div>
           </nav>
-          <div className="p-4 max-w-lg mx-auto">
+          <div className="p-4 max-w-lg mx-auto space-y-4">
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
                 <div>
@@ -534,6 +601,35 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
                 </button>
               </div>
             </div>
+
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-4">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Historial de Obras Vistas</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Tus últimas visualizaciones</p>
+                </div>
+                {historyObras.length > 0 && (
+                  <button onClick={() => setViewedIds(clearViewedHistory())} className="text-[10px] px-3 py-1.5 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 font-bold uppercase rounded-lg transition-colors">
+                    Limpiar
+                  </button>
+                )}
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+                {historyObras.length === 0 ? (
+                  <p className="text-sm text-slate-500 text-center py-4">No hay historial disponible.</p>
+                ) : (
+                  historyObras.map(o => (
+                    <div key={o.id} onClick={() => openDetail(o)} className="flex justify-between items-center p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl cursor-pointer transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">{o.nombre_obra}</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">#{o.clave}</p>
+                      </div>
+                      <IconChevronRight />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
           <Toast {...toast} onClose={() => setToast({ message: '', type: '' })} />
         </div>
@@ -541,14 +637,14 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
 
       if (view === "detail") {
         if (!currentObra) {
-          setView("list");
+          handleGoToList();
           return null;
         }
         const displayedMeasures = getDisplayedMeasures(currentObra, uiSettings.rotateMeasures);
         return (
           <div className="min-h-screen pb-20">
             <nav className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-10 shadow-sm">
-              <button onClick={() => setView("list")} className="p-2 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><IconBack /></button>
+              <button onClick={handleGoToList} className="p-2 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><IconBack /></button>
               <h2 className="font-bold text-slate-800 dark:text-slate-100 truncate px-4">Vista de Obra</h2>
               <div className="flex gap-1">
                 <button onClick={handleCopyInfo} className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-full" title="Copiar Información"><IconCopy /></button>
@@ -668,7 +764,7 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
 
       if (view === "form") {
         if (!currentObra) {
-          setView("list");
+          handleGoToList();
           return null;
         }
         return (
@@ -676,7 +772,7 @@ Observaciones: ${currentObra.observaciones || 'Ninguna'}
             <nav className="sticky top-0 bg-indigo-600 text-white p-4 flex justify-between items-center z-10 shadow-lg">
               <button 
                 type="button" 
-                onClick={() => setView(obras.find(o => o.id === currentObra.id) ? "detail" : "list")} 
+                onClick={() => obras.find(o => o.id === currentObra.id) ? setView("detail") : handleGoToList()} 
                 className="p-2 rounded-lg hover:bg-indigo-700"
               >
                 <IconBack />
