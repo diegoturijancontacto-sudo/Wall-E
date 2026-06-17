@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Gestor de Obras Pro</title>
+  
+  <!-- CDN confiables y estables de alto rendimiento -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.22.20/babel.min.js"></script>
+  
+  <script>
+    // Configuración de Tailwind para soportar modo oscuro nativo por clase CSS
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          animation: {
+            'bounce-custom': 'bounce-custom 1s infinite ease-in-out',
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+      transition: background-color .2s ease, color .2s ease; 
+    }
+    .glass-header { 
+      backdrop-filter: blur(10px); 
+      -webkit-backdrop-filter: blur(10px); 
+    }
+    @keyframes bounce-custom {
+      0%, 100% { transform: scaleY(0.3); opacity: 0.5; }
+      50% { transform: scaleY(1); opacity: 1; }
+    }
+    .animate-box-bounce { 
+      animation: bounce-custom 1s infinite ease-in-out; 
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // URL de tu Apps Script (Debe ser la URL de ejecución /exec)
+    const API_URL = "https://script.google.com/macros/s/AKfycbxmPBIboe_Evn45ZHjtkjydbmlPRMuSax_sEiTc2iN8cqqi2i4-Pf_lOd6875cQXEd_yg/exec";
+
+    // --- COMPONENTES DE ICONOS (Inline SVG para máxima compatibilidad) ---
+    const IconBack = () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
+    const IconEdit = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>;
+    const IconCopy = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>;
+    const IconSave = () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>;
+    const IconPlus = () => <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14"/></svg>;
+    const IconSearch = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>;
+    const IconPaperclip = () => <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-8.49 8.49a5.5 5.5 0 0 1-7.78-7.78l8.48-8.49a3.5 3.5 0 1 1 4.95 4.95l-8.49 8.48a1.5 1.5 0 0 1-2.12-2.12l8.49-8.48"/></svg>;
+    const IconSettings = () => <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
+
+    // --- COMPONENTE CARGADOR ---
+    const BoxLoader = ({ message = "Cargando datos..." }) => (
+      <div className="flex flex-col items-center justify-center p-12 space-y-6">
+        <div className="flex items-end justify-center space-x-2 h-10">
+          {[0, 0.15, 0.3, 0.45].map((delay, i) => (
+            <div key={i} className="w-3 bg-indigo-600 rounded-sm animate-box-bounce h-full" style={{ animationDelay: `${delay}s`, transformOrigin: 'bottom' }} />
+          ))}
+        </div>
+        <p className="text-slate-500 dark:text-slate-400 font-medium animate-pulse text-sm">{message}</p>
+      </div>
+    );
+
+    const Toast = ({ message, type, onClose }) => {
+      if (!message) return null;
+      useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t); }, [message]);
+      const color = type === 'error' ? 'bg-red-600' : 'bg-slate-800 dark:bg-slate-900';
+      return (
+        <div className={`fixed bottom-6 left-4 right-4 ${color} text-white p-4 rounded-xl shadow-lg z-50 flex justify-between items-center`}>
+          <span className="text-sm font-medium">{message}</span>
+          <button onClick={onClose} className="text-xs font-bold opacity-70 hover:opacity-100">CERRAR</button>
+        </div>
+      );
+    };
+
+    const RECENT_OBRAS_KEY = "recentObras";
+    const UI_SETTINGS_KEY = "obraUiSettings";
+    const MAX_RECENT = 3;
+    const MEASURE_ROUND_FACTOR = 10000;
+    
+    const DEFAULT_UI_SETTINGS = { darkMode: false, rotateMeasures: true };
+    const DEFAULT_OBRA = {
+      id: '',
+      nombre_obra: '',
+      ubicacion: '',
+      estatus: 'Consolidación',
+      tipo_obra: '',
+      superficie: '',
+      precio_lista: '',
+      precio_venta: '',
+      fecha_registro: '',
+      fecha_adquisicion: '',
+      fecha_venta: '',
+      cliente: '',
+      observaciones: '',
+      id_responsable: '',
+      autor: '',
+      asignacion: '',
+      provenance: '',
+      clave: 'Pendiente',
+      ancho: '',
+      alto: '',
+      largo: '',
+      tags: []
+    };
+
+    function getRecentIds() {
+      try { 
+        return JSON.parse(localStorage.getItem(RECENT_OBRAS_KEY) || "[]"); 
+      } catch (e) { 
+        console.error("Error parsing recent obras from localStorage:", e); 
+        return []; 
+      }
+    }
+
+    function saveRecentId(id) {
+      if (!id) return;
+      const ids = getRecentIds().filter(x => x !== id);
+      ids.unshift(id);
+      localStorage.setItem(RECENT_OBRAS_KEY, JSON.stringify(ids.slice(0, MAX_RECENT)));
+    }
+
+    function getUiSettings() {
+      try {
+        const storedSettings = JSON.parse(localStorage.getItem(UI_SETTINGS_KEY) || "{}");
+        const rotateMeasures = typeof storedSettings.rotateMeasures === 'boolean'
+          ? storedSettings.rotateMeasures
+          : !!storedSettings.invertMeasures;
+        return { ...DEFAULT_UI_SETTINGS, ...storedSettings, rotateMeasures };
+      } catch (e) {
+        console.error("Error parsing UI settings:", e);
+        return { ...DEFAULT_UI_SETTINGS };
+      }
+    }
+
+    // --- APP PRINCIPAL ---
+    function App() {
+      const normalizeMeasureValue = (value) => {
+        if (value === '' || value === null || value === undefined) return '';
+        const n = parseFloat(value);
+        return Number.isFinite(n) ? (Math.round(n * MEASURE_ROUND_FACTOR) / MEASURE_ROUND_FACTOR) : '';
+      };
+
+      const getDisplayedMeasures = (obra, rotate) => ({
+        ancho: rotate ? obra?.alto : obra?.ancho,
+        alto: rotate ? obra?.largo : obra?.alto,
+        largo: rotate ? obra?.ancho : obra?.largo
+      });
+
+      const [view, setView] = useState("list");
+      const [loading, setLoading] = useState(true);
+      const [obras, setObras] = useState([]);
+      const [comisiones, setComisiones] = useState([]);
+      const [search, setSearch] = useState("");
+      const [filterStatus, setFilterStatus] = useState("");
+      const [filterTipo, setFilterTipo] = useState("");
+      const [filterProvenance, setFilterProvenance] = useState("");
+      const [filterAutor, setFilterAutor] = useState("");
+      const [filterPriceMin, setFilterPriceMin] = useState("");
+      const [filterPriceMax, setFilterPriceMax] = useState("");
+      const [showFilters, setShowFilters] = useState(false);
+      const [currentObra, setCurrentObra] = useState(null);
+      const [toast, setToast] = useState({ message: '', type: '' });
+      const [saving, setSaving] = useState(false);
+      const [recentIds, setRecentIds] = useState(() => getRecentIds());
+      const [uiSettings, setUiSettings] = useState(() => getUiSettings());
+
+      useEffect(() => { 
+        fetchAllData(); 
+      }, []);
+
+      useEffect(() => {
+        localStorage.setItem(UI_SETTINGS_KEY, JSON.stringify(uiSettings));
+        if (uiSettings.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }, [uiSettings]);
+
+      const fetchAllData = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch(API_URL);
+          if (!res.ok) throw new Error("Fallo en la red");
+          const data = await res.json();
+          if (data && data.registrosObra) {
+            setObras(data.registrosObra.map(o => ({
+              ...o,
+              ancho: normalizeMeasureValue(o.ancho),
+              alto: normalizeMeasureValue(o.alto),
+              largo: normalizeMeasureValue(o.largo),
+            })));
+            setComisiones(data.comisiones || []);
+          } else {
+            showToast("La respuesta de la API no contiene el formato esperado.", "error");
+          }
+        } catch (e) { 
+          console.error(e);
+          showToast("Error al conectar con la base de datos.", "error"); 
+        } finally { 
+          setLoading(false); 
+        }
+      };
+
+      const showToast = (message, type = 'success') => setToast({ message, type });
+      
+      const activateOnKey = (event, action) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          action();
+        }
+      };
+
+      const openDetail = (obra) => {
+        if (!obra) return;
+        saveRecentId(obra.id);
+        setRecentIds(getRecentIds());
+        setCurrentObra(obra);
+        setView("detail");
+      };
+
+      const handleCreateNewObra = () => {
+        setCurrentObra({ ...DEFAULT_OBRA, id: Date.now().toString(), fecha_registro: new Date().toISOString().split('T')[0] });
+        setView("form");
+      };
+
+      const handleCopyInfo = () => {
+        if (!currentObra) return;
+        const prov = comisiones.find(c => c.id === currentObra.provenance)?.provenance || currentObra.provenance || "No definida";
+        const textToCopy = `
+Ficha de Obra: ${currentObra.nombre_obra || 'N/A'}
+Clave: ${currentObra.clave || 'N/A'}
+Estatus: ${currentObra.estatus || 'N/A'}
+Tipo: ${currentObra.tipo_obra || 'N/A'}
+Autor: ${currentObra.autor || 'N/A'}
+Ubicación: ${currentObra.ubicacion || 'N/A'}
+Precio Lista: $${(currentObra.precio_lista || 0).toLocaleString()}
+Precio Venta: $${(currentObra.precio_venta || 0).toLocaleString()}
+Superficie: ${currentObra.superficie || 0} m²
+Cliente: ${currentObra.cliente || 'N/A'}
+Fecha Registro: ${currentObra.fecha_registro || 'N/A'}
+Fecha Adquisición: ${currentObra.fecha_adquisicion || 'N/A'}
+Fecha Venta: ${currentObra.fecha_venta || 'N/A'}
+Asignación: ${currentObra.asignacion || 'N/A'}
+Responsable: ${currentObra.responsable_nombre || currentObra.id_responsable || 'N/A'}
+Provenance: ${prov}
+Tags: ${tagsAsText(currentObra.tags) || 'N/A'}
+Observaciones: ${currentObra.observaciones || 'Ninguna'}
+        `.trim();
+
+        const textArea = document.createElement("textarea");
+        textArea.value = textToCopy;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          showToast("Información copiada al portapapeles");
+        } catch (err) {
+          showToast("Error al copiar al portapapeles", "error");
+        }
+        document.body.removeChild(textArea);
+      };
+
+      const handleSave = async (e) => {
+        e.preventDefault();
+        if (!currentObra) return;
+        setSaving(true);
+        const isNew = !obras.find(o => o.id === currentObra.id);
+        const action = isNew ? 'registro_obra_add' : 'registro_obra_update';
+        const tagsNormalized = Array.isArray(currentObra.tags)
+          ? currentObra.tags
+          : (currentObra.tags || '').toString().split(',').map(t => t.trim()).filter(Boolean);
+          
+        const payload = {
+          ...currentObra,
+          ancho: normalizeMeasureValue(currentObra.ancho),
+          alto: normalizeMeasureValue(currentObra.alto),
+          largo: normalizeMeasureValue(currentObra.largo),
+          tags: tagsNormalized
+        };
+        
+        try {
+          const res = await fetch(API_URL, { 
+            method: 'POST', 
+            body: JSON.stringify({ action, data: payload }) 
+          });
+          const result = await res.json();
+          if (result && result.result === 'success') {
+            showToast("Guardado correctamente");
+            await fetchAllData();
+            setView("list");
+          } else {
+            showToast("El servidor no guardó con éxito: " + (result?.message || 'Error desconocido'), "error");
+          }
+        } catch (e) { 
+          showToast("Error al guardar los datos.", "error"); 
+        } finally { 
+          setSaving(false); 
+        }
+      };
+
+      const formatCurrency = (v) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(v || 0);
+      const tagsAsText = (tags) => Array.isArray(tags) ? tags.join(', ') : (tags || '');
+      const uniqueValues = (items) => [...new Set(items.filter(Boolean).map(x => x.toString().trim()))].sort((a, b) => a.localeCompare(b, 'es-MX'));
+      
+      const parseNumeric = (value) => {
+        const parsed = parseFloat(value);
+        return Number.isFinite(parsed) ? parsed : null;
+      };
+
+      const matchesPriceRange = (priceValue, min, max) => {
+        if (min === null && max === null) return true;
+        if (priceValue === null) return false;
+        if (min !== null && priceValue < min) return false;
+        if (max !== null && priceValue > max) return false;
+        return true;
+      };
+
+      const minPriceValue = parseNumeric(filterPriceMin);
+      const maxPriceValue = parseNumeric(filterPriceMax);
+      const statusOptions = useMemo(() => uniqueValues(obras.map(o => o.estatus)), [obras]);
+      const tipoOptions = useMemo(() => uniqueValues(obras.map(o => o.tipo_obra)), [obras]);
+      const provenanceOptions = useMemo(() => uniqueValues(obras.map(o => comisiones.find(c => c.id === o.provenance)?.provenance || o.provenance)), [obras, comisiones]);
+      const autorOptions = useMemo(() => uniqueValues(obras.map(o => o.autor)), [obras]);
+
+      const filtered = [...obras].reverse().filter(o => {
+        const ventaPrice = parseNumeric(o.precio_venta);
+        const listaPrice = parseNumeric(o.precio_lista);
+        const selectedPrice = ventaPrice ?? listaPrice;
+        
+        return (
+          (
+            (o.nombre_obra || "").toLowerCase().includes(search.toLowerCase()) ||
+            (o.clave || "").toLowerCase().includes(search.toLowerCase())
+          ) &&
+          (!filterStatus || (o.estatus || '') === filterStatus) &&
+          (!filterTipo || (o.tipo_obra || '') === filterTipo) &&
+          (!filterProvenance || (comisiones.find(c => c.id === o.provenance)?.provenance || o.provenance || '') === filterProvenance) &&
+          (!filterAutor || (o.autor || '') === filterAutor) &&
+          matchesPriceRange(selectedPrice, minPriceValue, maxPriceValue)
+        );
+      });
+
+      const recentObras = recentIds.map(id => obras.find(o => o.id === id)).filter(Boolean);
+
+      // --- RENDERIZADO DE VISTAS ---
+
+      if (view === "list") return (
+        <div className="min-h-screen">
+          <header className="sticky top-0 z-10 glass-header p-4 border-b bg-white/95 dark:bg-slate-900/95 border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="flex items-center justify-between gap-3 mb-4">
+              <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Registro de Obra</h1>
+              <button
+                onClick={() => setView("settings")}
+                className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 transition-all"
+                title="Configuración"
+              >
+                <IconSettings />
+              </button>
+            </div>
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><IconSearch /></span>
+              <input 
+                type="text" 
+                placeholder="Buscar por nombre o clave..." 
+                className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100 placeholder-slate-400" 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+              />
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="mt-3 w-full px-3 py-2 text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300 transition-all"
+            >
+              {showFilters ? "Ocultar filtros avanzados" : "Mostrar filtros avanzados"}
+            </button>
+            {showFilters && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 mt-3 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-800">
+              <select className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-950 dark:text-slate-50" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+                <option value="">Estatus: Todos</option>
+                {statusOptions.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <select className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-950 dark:text-slate-50" value={filterTipo} onChange={e => setFilterTipo(e.target.value)}>
+                <option value="">Tipo: Todos</option>
+                {tipoOptions.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <select className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-950 dark:text-slate-50" value={filterProvenance} onChange={e => setFilterProvenance(e.target.value)}>
+                <option value="">Provenance: Todos</option>
+                {provenanceOptions.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <select className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-950 dark:text-slate-50" value={filterAutor} onChange={e => setFilterAutor(e.target.value)}>
+                <option value="">Autor: Todos</option>
+                {autorOptions.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+              <input
+                type="number"
+                step="any"
+                placeholder="Precio mínimo"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-950 dark:text-slate-50 placeholder-slate-400"
+                value={filterPriceMin}
+                onChange={e => setFilterPriceMin(e.target.value)}
+              />
+              <input
+                type="number"
+                step="any"
+                placeholder="Precio máximo"
+                className="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500 text-slate-950 dark:text-slate-50 placeholder-slate-400"
+                value={filterPriceMax}
+                onChange={e => setFilterPriceMax(e.target.value)}
+              />
+            </div>}
+          </header>
+          <main className="p-4 space-y-4 max-w-xl mx-auto">
+            {!loading && recentObras.length > 0 && (
+              <div>
+                <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Vistas Recientemente</h2>
+                <div className="space-y-2">
+                  {recentObras.map(o => (
+                    <div 
+                      key={o.id} 
+                      onClick={() => openDetail(o)} 
+                      role="button" 
+                      tabIndex={0} 
+                      onKeyDown={(e) => activateOnKey(e, () => openDetail(o))} 
+                      className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/40 p-3 rounded-2xl active:scale-95 hover:scale-[1.01] transition-all flex justify-between items-center cursor-pointer"
+                    >
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-tight truncate">{o.nombre_obra}</h3>
+                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">#{o.clave}</p>
+                      </div>
+                      <span className="text-[10px] font-bold bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded uppercase tracking-wider ml-2 shrink-0">{o.estatus}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-slate-200 dark:border-slate-800 mt-4 pt-4">
+                  <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3">Todas las Obras</h2>
+                </div>
+              </div>
+            )}
+            
+            {loading ? <BoxLoader message="Obteniendo registros de la nube..." /> : (
+              <ul className="space-y-3">
+                {filtered.map(o => (
+                  <li 
+                    key={o.id} 
+                    onClick={() => openDetail(o)} 
+                    role="button" 
+                    tabIndex={0} 
+                    onKeyDown={(e) => activateOnKey(e, () => openDetail(o))} 
+                    className="bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 active:scale-95 hover:scale-[1.01] cursor-pointer transition-all"
+                  >
+                    <div className="flex justify-between items-start mb-2 gap-3">
+                      <h3 className="font-bold text-slate-800 dark:text-slate-100 leading-tight">{o.nombre_obra}</h3>
+                      <span className="text-[10px] font-bold bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-indigo-400 px-2 py-1 rounded uppercase tracking-wider shrink-0">{o.estatus}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <p className="text-slate-500 dark:text-slate-400 font-mono">#{o.clave || '-'}</p>
+                      {(() => {
+                        const hasAdjuntos = Array.isArray(o.adjuntos) && o.adjuntos.length > 0;
+                        return (
+                          <span className={hasAdjuntos ? "text-indigo-600 dark:text-indigo-400" : "text-slate-300 dark:text-slate-700"} title={hasAdjuntos ? "Con archivos adjuntos" : "Sin archivos adjuntos"}>
+                            <IconPaperclip />
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!loading && filtered.length === 0 && (
+              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 text-center text-slate-500 dark:text-slate-400">
+                No hay obras que coincidan con los filtros de búsqueda.
+              </div>
+            )}
+          </main>
+          
+          <button 
+            onClick={handleCreateNewObra} 
+            className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full shadow-lg flex items-center justify-center active:scale-90 transition-all z-20"
+            title="Añadir nueva obra"
+          >
+            <IconPlus />
+          </button>
+          
+          <Toast {...toast} onClose={() => setToast({ message: '', type: '' })} />
+        </div>
+      );
+
+      if (view === "settings") return (
+        <div className="min-h-screen">
+          <nav className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-10 shadow-sm">
+            <button onClick={() => setView("list")} className="p-2 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><IconBack /></button>
+            <h2 className="font-bold text-slate-800 dark:text-slate-100 truncate px-4">Configuración</h2>
+            <div className="w-8"></div>
+          </nav>
+          <div className="p-4 max-w-lg mx-auto">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 space-y-6">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Modo Oscuro</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Alternar esquema de color</p>
+                </div>
+                <input
+                  type="checkbox"
+                  className="w-5 h-5 accent-indigo-600 rounded cursor-pointer"
+                  checked={!!uiSettings.darkMode}
+                  onChange={e => setUiSettings({ ...uiSettings, darkMode: e.target.checked })}
+                />
+              </div>
+              <div className="space-y-3">
+                <h3 className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Rotación de Medidas</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Cuando está activo, el ancho se visualiza como alto, el alto como largo y el largo como ancho en la ficha de detalle.
+                </p>
+                <button
+                  onClick={() => setUiSettings({ ...uiSettings, rotateMeasures: !uiSettings.rotateMeasures })}
+                  className={`w-full py-3 rounded-xl font-bold border transition-colors ${uiSettings.rotateMeasures ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300'}`}
+                >
+                  {uiSettings.rotateMeasures ? "Medidas Rotadas (Activo)" : "Estándar (Inactivo)"}
+                </button>
+              </div>
+            </div>
+          </div>
+          <Toast {...toast} onClose={() => setToast({ message: '', type: '' })} />
+        </div>
+      );
+
+      if (view === "detail") {
+        if (!currentObra) {
+          setView("list");
+          return null;
+        }
+        const displayedMeasures = getDisplayedMeasures(currentObra, uiSettings.rotateMeasures);
+        return (
+          <div className="min-h-screen pb-20">
+            <nav className="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 p-4 flex justify-between items-center z-10 shadow-sm">
+              <button onClick={() => setView("list")} className="p-2 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><IconBack /></button>
+              <h2 className="font-bold text-slate-800 dark:text-slate-100 truncate px-4">Vista de Obra</h2>
+              <div className="flex gap-1">
+                <button onClick={handleCopyInfo} className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-full" title="Copiar Información"><IconCopy /></button>
+                <button onClick={() => setView("form")} className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-full" title="Editar"><IconEdit /></button>
+              </div>
+            </nav>
+            
+            <div className="p-4 space-y-4 max-w-lg mx-auto">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="flex justify-between items-start mb-4 gap-2">
+                  <div>
+                    <span className="text-xs font-mono font-bold text-indigo-500 uppercase tracking-wider">{currentObra.clave || "SIN CLAVE"}</span>
+                    <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white leading-tight mt-1">{currentObra.nombre_obra || "Sin Nombre"}</h1>
+                  </div>
+                  <span className="bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase shrink-0">{currentObra.estatus}</span>
+                </div>
+                
+                <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Tipo de Obra</p><p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{currentObra.tipo_obra || "No especificado"}</p></div>
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Autor</p><p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{currentObra.autor || "No especificado"}</p></div>
+                  </div>
+                  <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Ubicación</p><p className="text-sm text-slate-700 dark:text-slate-300 font-medium">{currentObra.ubicacion || "No especificada"}</p></div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Precio Lista</p><p className="text-lg font-black text-indigo-600 dark:text-indigo-400">{formatCurrency(currentObra.precio_lista)}</p></div>
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Precio Venta</p><p className="text-lg font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(currentObra.precio_venta)}</p></div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Superficie</p><p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{currentObra.superficie || "0"} m²</p></div>
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Cliente</p><p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{currentObra.cliente || "-"}</p></div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
+                    <div className="text-center"><p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Ancho</p><p className="text-sm font-bold text-slate-800 dark:text-slate-200">{displayedMeasures.ancho || "-"} cm</p></div>
+                    <div className="text-center"><p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Alto</p><p className="text-sm font-bold text-slate-800 dark:text-slate-200">{displayedMeasures.alto || "-"} cm</p></div>
+                    <div className="text-center"><p className="text-[9px] text-slate-400 dark:text-slate-500 font-bold uppercase">Largo</p><p className="text-sm font-bold text-slate-800 dark:text-slate-200">{displayedMeasures.largo || "-"} cm</p></div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Información de Seguimiento</h3>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Registro</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{currentObra.fecha_registro || "-"}</p></div>
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Adquisición</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{currentObra.fecha_adquisicion || "-"}</p></div>
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Venta</p><p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{currentObra.fecha_venta || "-"}</p></div>
+                  </div>
+                  
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Provenance</p>
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      {comisiones.find(c => c.id === currentObra.provenance)?.provenance || currentObra.provenance || "No definida"}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4 border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Asignación</p><p className="text-sm font-medium text-slate-700 dark:text-slate-300">{currentObra.asignacion || "-"}</p></div>
+                    <div><p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Responsable</p><p className="text-sm font-medium text-slate-700 dark:text-slate-300">{currentObra.responsable_nombre || currentObra.id_responsable || "-"}</p></div>
+                  </div>
+                  
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Tags</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {Array.isArray(currentObra.tags) && currentObra.tags.length > 0 ? (
+                        currentObra.tags.map((tag, i) => (
+                          <span key={i} className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full font-medium">#{tag}</span>
+                        ))
+                      ) : (
+                        <p className="text-xs text-slate-400">-</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase">Observaciones</p>
+                    <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap mt-1 leading-relaxed">
+                      {currentObra.observaciones || "Sin observaciones registradas."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              {currentObra.documentos && currentObra.documentos.length > 0 && (
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Documentos Adjuntos</h3>
+                  <div className="space-y-2">
+                    {currentObra.documentos.map((d, i) => (
+                      <a key={d.id || i} href={d.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500 shrink-0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">{d.name || d.url}</p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {currentObra.adjuntos && currentObra.adjuntos.length > 0 && (
+                <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                  <h3 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Archivos Multimedia</h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    {currentObra.adjuntos.map(a => (
+                      <a key={a.id} href={a.url} target="_blank" rel="noopener noreferrer" className="p-2 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-xl block transition-all">
+                        {a.mimeType?.includes('image') && (
+                          <img src={`https://drive.google.com/thumbnail?id=${a.id}&sz=w200`} className="w-full h-24 object-cover rounded mb-2 border border-slate-200 dark:border-slate-700" alt={a.name} />
+                        )}
+                        <p className="text-[10px] truncate font-medium text-slate-600 dark:text-slate-300">{a.name}</p>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <Toast {...toast} onClose={() => setToast({ message: '', type: '' })} />
+          </div>
+        );
+      }
+
+      if (view === "form") {
+        if (!currentObra) {
+          setView("list");
+          return null;
+        }
+        return (
+          <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-12">
+            <nav className="sticky top-0 bg-indigo-600 text-white p-4 flex justify-between items-center z-10 shadow-lg">
+              <button 
+                type="button" 
+                onClick={() => setView(obras.find(o => o.id === currentObra.id) ? "detail" : "list")} 
+                className="p-2 rounded-lg hover:bg-indigo-700"
+              >
+                <IconBack />
+              </button>
+              <h2 className="font-bold">Formulario de Registro</h2>
+              <div className="w-8"></div>
+            </nav>
+            
+            <form onSubmit={handleSave} className="p-4 space-y-6 max-w-lg mx-auto">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Nombre de la Obra</label>
+                  <input required type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.nombre_obra || ''} onChange={e => setCurrentObra({...currentObra, nombre_obra: e.target.value})} />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Clave (Automática)</label>
+                    <input readOnly type="text" className="w-full p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-400 dark:text-slate-500 font-mono" value={currentObra.clave || 'Pendiente'} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Estatus</label>
+                    <select className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-slate-100" value={currentObra.estatus || 'Consolidación'} onChange={e => setCurrentObra({...currentObra, estatus: e.target.value})}>
+                      <option value="Consolidación">Consolidación</option>
+                      <option value="Bodega">Bodega</option>
+                      <option value="Vendida">Vendida</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Asignación</label>
+                    <input readOnly type="text" className="w-full p-3 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-400 dark:text-slate-500" value={currentObra.asignacion || ''} placeholder="Se calcula al guardar" />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">ID Responsable</label>
+                    <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.id_responsable || ''} onChange={e => setCurrentObra({...currentObra, id_responsable: e.target.value})} />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Tipo de Obra</label>
+                    <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.tipo_obra || ''} onChange={e => setCurrentObra({...currentObra, tipo_obra: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Autor</label>
+                    <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.autor || ''} onChange={e => setCurrentObra({...currentObra, autor: e.target.value})} />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Ubicación física</label>
+                  <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.ubicacion || ''} onChange={e => setCurrentObra({...currentObra, ubicacion: e.target.value})} />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Precio Lista (MXN)</label>
+                    <input type="number" step="any" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.precio_lista || ''} onChange={e => setCurrentObra({...currentObra, precio_lista: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Precio Venta (MXN)</label>
+                    <input type="number" step="any" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.precio_venta || ''} onChange={e => setCurrentObra({...currentObra, precio_venta: e.target.value})} />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Superficie (m²)</label>
+                    <input type="number" step="any" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.superficie || ''} onChange={e => setCurrentObra({...currentObra, superficie: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Cliente</label>
+                    <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.cliente || ''} onChange={e => setCurrentObra({...currentObra, cliente: e.target.value})} />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">F. Registro</label>
+                    <input type="date" className="w-full p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs text-slate-900 dark:text-slate-100" value={currentObra.fecha_registro || ''} onChange={e => setCurrentObra({...currentObra, fecha_registro: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">F. Adquisic.</label>
+                    <input type="date" className="w-full p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs text-slate-900 dark:text-slate-100" value={currentObra.fecha_adquisicion || ''} onChange={e => setCurrentObra({...currentObra, fecha_adquisicion: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">F. Venta</label>
+                    <input type="date" className="w-full p-2 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs text-slate-900 dark:text-slate-100" value={currentObra.fecha_venta || ''} onChange={e => setCurrentObra({...currentObra, fecha_venta: e.target.value})} />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Provenance</label>
+                    <select className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-slate-900 dark:text-slate-100" value={currentObra.provenance || ''} onChange={e => setCurrentObra({...currentObra, provenance: e.target.value})}>
+                      <option value="">Seleccionar...</option>
+                      {comisiones.map(c => <option key={c.id} value={c.id}>{c.provenance}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Tags (por coma)</label>
+                    <input type="text" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={tagsAsText(currentObra.tags)} onChange={e => setCurrentObra({...currentObra, tags: e.target.value})} placeholder="oleo, abstracto" />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Ancho (cm)</label>
+                    <input type="number" step="any" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.ancho || ''} onChange={e => setCurrentObra({...currentObra, ancho: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Alto (cm)</label>
+                    <input type="number" step="any" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.alto || ''} onChange={e => setCurrentObra({...currentObra, alto: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Largo (cm)</label>
+                    <input type="number" step="any" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.largo || ''} onChange={e => setCurrentObra({...currentObra, largo: e.target.value})} />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase ml-1">Observaciones</label>
+                  <textarea rows="3" className="w-full p-3 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 text-slate-900 dark:text-slate-100" value={currentObra.observaciones || ''} onChange={e => setCurrentObra({...currentObra, observaciones: e.target.value})} />
+                </div>
+              </div>
+              
+              <button disabled={saving} type="submit" className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold shadow-lg flex justify-center items-center gap-2 active:scale-95 transition-all disabled:opacity-50">
+                {saving ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <React.Fragment>
+                    <IconSave /> Guardar Registro
+                  </React.Fragment>
+                )}
+              </button>
+            </form>
+            <Toast {...toast} onClose={() => setToast({ message: '', type: '' })} />
+          </div>
+        );
+      }
+    }
+
+    // Inicialización del DOM lista para React 18
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
